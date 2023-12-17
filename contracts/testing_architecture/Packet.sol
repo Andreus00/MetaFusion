@@ -21,37 +21,35 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
-struct packetMetadata{
-    uint remainingPacketNumber;
-    uint collection;
-}
-
-
 contract MetaPacket is ERC721 {
 
     address private owner;  // the owner of the contract
-    address private oracle;  // the oracle
 
     mapping (uint => uint) public collection;  // The collection to which the packet belongs. Everyone can read this.
+    mapping (uint => uint) public alreadyMinted;  // Mapping from collection to the number of packets already minted for that collection.
+    mapping (uint => bool) public existCollection; // Mapping from collection to a boolean that indicates if the collection exists.
 
-    string public baseURI = "https://metafusion.io/api/packet/";  // The base URI for the metadata of the packets
+    uint constant MAX_PACKETS_PER_COLLECTION = 1000;  // The maximum number of packets that can be minted for each collection.
+
+    string public baseURI = "https://metafusion.io/api/packet/";  // The base URI for the metadata of the packets; alias besughi
 
     constructor() ERC721("MetaPacket", "PKT") { // The name and symbol of the token
         owner = msg.sender;    // The owner of the contract is the one who deployed it
-        oracle = msg.sender;
     }
 
     function setOracle(address _oracle) public {
         // The owner of the contract is the only one who can set the oracle.
         require(msg.sender == owner, "Only the owner of the contract can set the oracle!");
-        oracle = _oracle;
+        // oracle = _oracle;
     }
 
-    function mint(uint id, uint _collection) public {
+    function mint(address buyer, uint _collection) public {
         // The owner of the contract is the only one who can mint new packets.
         require(msg.sender == owner, "Only the owner of the contract can mint new MetaPackets!");
-        _safeMint(owner, id);
-        collection[id] = _collection;
+        require(existCollection[_collection], "The collection does not exist!");
+        require(MAX_PACKETS_PER_COLLECTION > alreadyMinted[_collection], "The maximum number of packets for this collection has been reached!");
+        _safeMint(buyer, alreadyMinted[_collection]);
+        collection[alreadyMinted[_collection]] = _collection; 
     }
 
     function openPacket(uint id) public payable {

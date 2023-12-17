@@ -33,7 +33,7 @@ struct ImageMetadata {
 contract MetaCard is ERC721 {
 
     address private minter;  // the oracle
-    address private owner;  // the owner of the contract
+    address private owner;  // the owner of the contract; alias president
 
     mapping (uint => ImageMetadata) public metadata;  // The seed used to generate the image. Everyone can read this.
 
@@ -46,6 +46,7 @@ contract MetaCard is ERC721 {
 
     function mint(address to, uint id, uint _seed, uint[5] memory _prompts) public {
         // The oracle is the only one who can mint new cards.
+        require(msg.sender == minter, "Only the oracle can mint new cards!");
         _safeMint(to, id);
         metadata[id].seed = _seed;
         metadata[id].prompts = _prompts;
