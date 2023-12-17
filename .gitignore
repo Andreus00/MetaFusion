@@ -12,3 +12,8 @@ node_modules
 # solidity-coverage files
 /coverage
 /coverage.json
+
+.vscode
+cache
+artifacts
+typechain-types
