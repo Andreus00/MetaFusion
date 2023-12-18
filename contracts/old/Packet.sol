@@ -20,6 +20,7 @@
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "./Prompt.sol";
 
 struct packetMetadata{
     uint remainingPacketNumber;
@@ -31,6 +32,8 @@ contract MetaPacket is ERC721 {
 
     address private owner;  // the owner of the contract
     address private oracle;  // the oracle
+
+    MetaPrompt private metaPrompt;
 
     mapping (uint => uint) public collection;  // The collection to which the packet belongs. Everyone can read this.
 
@@ -60,6 +63,11 @@ contract MetaPacket is ERC721 {
         
         // TODO: Call the oracle to mint the Prompts
         // TODO: mock the oracle for now
+
+        uint random_type = uint(keccak256(abi.encodePacked(block.timestamp, block.prevrandao, msg.sender))) % 5;
+        uint new_card_id = 42;
+
+        metaPrompt.mint(msg.sender, new_card_id, collection[id], random_type);
 
         // Burn the packet
         _burn(id);

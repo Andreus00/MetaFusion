@@ -37,19 +37,24 @@ contract MetaPacket is ERC721 {
         owner = msg.sender;    // The owner of the contract is the one who deployed it
     }
 
-    function setOracle(address _oracle) public {
-        // The owner of the contract is the only one who can set the oracle.
-        require(msg.sender == owner, "Only the owner of the contract can set the oracle!");
-        // oracle = _oracle;
-    }
-
     function mint(address buyer, uint _collection) public {
         // The owner of the contract is the only one who can mint new packets.
         require(msg.sender == owner, "Only the owner of the contract can mint new MetaPackets!");
         require(existCollection[_collection], "The collection does not exist!");
         require(MAX_PACKETS_PER_COLLECTION > alreadyMinted[_collection], "The maximum number of packets for this collection has been reached!");
         _safeMint(buyer, alreadyMinted[_collection]);
-        collection[alreadyMinted[_collection]] = _collection; 
+        collection[alreadyMinted[_collection]] = _collection;
+    }
+
+    function checkCollectionExistence(uint _collection) public view returns (bool) {
+        return existCollection[_collection];
+    }
+
+    function forgeCollection(uint _collection) public {
+        // The owner of the contract is the only one who can forge new collections.
+        require(msg.sender == owner, "Only the owner of the contract can forge new collections!");
+        require(!existCollection[_collection], "The collection already exists!");
+        existCollection[_collection] = true;
     }
 
     function openPacket(uint id) public payable {
