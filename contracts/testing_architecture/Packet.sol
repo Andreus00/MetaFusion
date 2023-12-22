@@ -23,51 +23,80 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
 contract MetaPacket is ERC721 {
 
-    address private owner;  // the owner of the contract
+	address private owner;  // the owner of the contract
 
-    mapping (uint => uint) public collection;  // The collection to which the packet belongs. Everyone can read this.
-    mapping (uint => uint) public alreadyMinted;  // Mapping from collection to the number of packets already minted for that collection.
-    mapping (uint => bool) public existCollection; // Mapping from collection to a boolean that indicates if the collection exists.
+	mapping (uint16 => uint16) public alreadyMinted;  // Mapping from collection to the number of packets already minted for that collection. 0 if the collection does not exist.
 
-    uint constant MAX_PACKETS_PER_COLLECTION = 1000;  // The maximum number of packets that can be minted for each collection.
+	uint16 constant MAX_PACKETS_PER_COLLECTION = 1000;  // The maximum number of packets that can be minted for each collection.
 
-    string public baseURI = "https://metafusion.io/api/packet/";  // The base URI for the metadata of the packets; alias besughi
-
-    constructor() ERC721("MetaPacket", "PKT") { // The name and symbol of the token
-        owner = msg.sender;    // The owner of the contract is the one who deployed it
+	string public baseURI = "https://metafusion.io/api/packet/";  // The base URI for the metadata of the packets; alias besughi
+	
+    modifier collectionExists(uint16 _collection) {
+        require(checkCollectionExistence(_collection), "The collection does not exist!");
+        _;
+    }
+    
+	modifier collectionNotExists(uint16 _collection) {
+        require(!checkCollectionExistence(_collection), "The collection exists!");
+        _;
     }
 
-    function mint(address buyer, uint _collection) public {
-        // The owner of the contract is the only one who can mint new packets.
+    modifier collectionIsNotFull(uint16 _collection) {
+        require(checkIfCollectionIsFull(_collection), "The collection is full!");
+        _;
+    }
+
+    modifier onlyOwner() {
         require(msg.sender == owner, "Only the owner of the contract can mint new MetaPackets!");
-        require(existCollection[_collection], "The collection does not exist!");
-        require(MAX_PACKETS_PER_COLLECTION > alreadyMinted[_collection], "The maximum number of packets for this collection has been reached!");
-        _safeMint(buyer, alreadyMinted[_collection]);
-        collection[alreadyMinted[_collection]] = _collection;
-        alreadyMinted[_collection]++;
+        _;
     }
 
-    function checkCollectionExistence(uint _collection) public view returns (bool) {
-        return existCollection[_collection];
-    }
+	constructor() ERC721("MetaPacket", "PKT") { // The name and symbol of the token
+		owner = msg.sender;    // The owner of the contract is the one who deployed it
+	}
 
-    function forgeCollection(uint _collection) public {
-        // The owner of the contract is the only one who can forge new collections.
-        require(msg.sender == owner, "Only the owner of the contract can forge new collections!");
-        require(!existCollection[_collection], "The collection already exists!");
-        existCollection[_collection] = true;
-    }
+	function checkCollectionExistence(uint16 _collection) public view returns (bool) {
+		return alreadyMinted[_collection] > 0;
+	}
+	function checkIfCollectionIsFull(uint16 _collection) public view returns (bool) {
+		return MAX_PACKETS_PER_COLLECTION > alreadyMinted[_collection];
+	}
 
-    function openPacket(uint id) public payable {
-        // TODO: check if the owner sent enough ether to open the packet
-        require(msg.sender == ownerOf(id), "Only the owner of the packet can burn it!");
-        
-        // TODO: Call the oracle to mint the Prompts
-        // TODO: mock the oracle for now
+	// uuid = idInCollection << 16 | idCollection
+	// idCollection = uuid & 0xffff
+	// idInCollection = uuid >> 16
 
-        // Burn the packet
-        _burn(id);
-        // remove the packet from collection
-        delete collection[id];
-    }
+	function genPacketUuid(uint16 _collection, uint16 idInCollection) public view returns (uint32) {
+		return uint32(idInCollection) << 16 | uint32(_collection);
+	}
+
+	function mint(address buyer, uint16 _collection) public collectionExists collectionIsNotFull onlyOwner{
+		// calculate the kacchak of alreadyMinted[_collection] + _collection
+		uint16 id = alreadyMinted[_collection];
+		uint256 packetUUid = uint256(id) << 16 | uint256(_collection);
+		_safeMint(buyer, packetUUid);
+		alreadyMinted[_collection]++;
+	}
+
+	function forgeCollection(uint16 _collection) public collectionNotExists onlyOwner {
+		alreadyMinted[_collection] = 1;
+	}
+
+	function openPacket(uint id) public payable {
+		// TODO: check if the owner sent enough ether to open the packet
+		require(msg.sender == ownerOf(id), "Only the owner of the packet can burn it!");
+
+		// get the current timestamp
+		uint timestamp = block.timestamp;
+
+		
+		
+		// TODO: Call the oracle to mint the Prompts
+		// TODO: mock the oracle for now
+
+		// Burn the packet
+		_burn(id);
+		// remove the packet from collection
+		delete collection[id];
+	}
 }
