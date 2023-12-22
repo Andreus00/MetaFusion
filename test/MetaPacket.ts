@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 import {
     time,
     loadFixture,
@@ -10,10 +12,10 @@ import {
 
 describe("MetafusionPresident", function () {
 
-    async function switchAccount(metaFusionPresident, otherAccount) {
-      return await metaFusionPresident.connect(otherAccount);
-
-    }
+    // async function switchAccount(metaFusionPresident, otherAccount) {
+    //   return await metaFusionPresident.connect(otherAccount);
+    //
+    // }
     
     // We define a fixture to reuse the same setup in every test.
     // We use loadFixture to run this setup once, snapshot that state,
@@ -97,16 +99,20 @@ describe("MetafusionPresident", function () {
       it("Buy a packet whose collection does exist.", async function () {
         const { metaFusionPresident, owner, otherAccount } = await loadFixture(deployMetafusionAndCreateCollection);
 
-        // check if the collection is not forged
-        expect(await metaFusionPresident.checkCollectionExistence(0)).to.equal(false);
-
         // check if the collection is forged
         expect(await metaFusionPresident.checkCollectionExistence(0)).to.equal(true);
         
-        
+        // get the balance of the wallet
+        let user_balance: bigint = await ethers.provider.getBalance(otherAccount.address);
+
         // the user buy a packet from the collection
         expect(await metaFusionPresident.forgePacket(0, { value: ethers.parseEther("0.1")})).to.not.be.reverted;
 
+        // check the nwe balance of the wallet
+        let new_balance: bigint = await ethers.provider.getBalance(otherAccount.address);
+
+        // check if the balance has decreased
+        expect((user_balance - new_balance) == ethers.parseEther("0.1"));
       });
     });
   });

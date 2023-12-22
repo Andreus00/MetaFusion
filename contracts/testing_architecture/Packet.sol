@@ -44,6 +44,7 @@ contract MetaPacket is ERC721 {
         require(MAX_PACKETS_PER_COLLECTION > alreadyMinted[_collection], "The maximum number of packets for this collection has been reached!");
         _safeMint(buyer, alreadyMinted[_collection]);
         collection[alreadyMinted[_collection]] = _collection;
+        alreadyMinted[_collection]++;
     }
 
     function checkCollectionExistence(uint _collection) public view returns (bool) {

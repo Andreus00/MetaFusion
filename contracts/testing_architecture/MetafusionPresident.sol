@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
@@ -8,7 +9,7 @@ import "./Card.sol";
 
 contract MetaFusionPresident {
 
-    address private minter;  // the oracle
+    address private oracle;  // the oracle
     address immutable private owner;  // the owner of the contract
 
     MetaPrompt private metaPrompt;
@@ -22,7 +23,7 @@ contract MetaFusionPresident {
     string public baseURI = "https://metafusion.io/api/";  // The base URI for the metadata of the cards
 
     constructor() { // The name and symbol of the token
-        minter = msg.sender;    // I still don't know how to use the oracle
+        oracle = msg.sender;    // I still don't know how to use the oracle
         owner = msg.sender;    // The owner of the contract is the one who deployed it
 
         // create the meta contracts
@@ -48,7 +49,7 @@ contract MetaFusionPresident {
 
     function forgePacket(uint collection) public payable {
         // metaPacket.
-        require(msg.value == packetCost, "You didn't send enought ethers!");
+        require(msg.value >= packetCost, "You didn't send enought ethers!");
         metaPacket.mint(msg.sender, collection);
     }
 }
