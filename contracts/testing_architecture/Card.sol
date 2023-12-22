@@ -32,7 +32,7 @@ struct ImageMetadata {
 
 contract MetaCard is ERC721 {
 
-    address private minter;  // the oracle
+    address private oracle;  // the oracle
     address private owner;  // the owner of the contract; alias president
 
     mapping (uint => ImageMetadata) public metadata;  // The seed used to generate the image. Everyone can read this.
@@ -40,13 +40,20 @@ contract MetaCard is ERC721 {
     string public baseURI = "https://metafusion.io/api/card/";  // The base URI for the metadata of the cards
 
     constructor() ERC721("MetaCard", "MCD") { // The name and symbol of the token
-        minter = msg.sender;    // I still don't know how to use the oracle
+        oracle = msg.sender;    // I still don't know how to use the oracle
         owner = msg.sender;    // The owner of the contract is the one who deployed it
     }
 
+    /**
+     * 
+     * @param to 
+     * @param id 
+     * @param _seed 
+     * @param _prompts 
+     */
     function mint(address to, uint id, uint _seed, uint[5] memory _prompts) public {
         // The oracle is the only one who can mint new cards.
-        require(msg.sender == minter, "Only the oracle can mint new cards!");
+        require(msg.sender == oracle, "Only the oracle can mint new cards!");
         _safeMint(to, id);
         metadata[id].seed = _seed;
         metadata[id].prompts = _prompts;

@@ -46,6 +46,13 @@ contract MetaPrompt is ERC721 {
         minter = _oracle;
     }
 
+    /**
+     * 
+     * @param to The address of the receiver
+     * @param id The hash of the prompt (keccak256(prompt + "series number"))
+     * @param _collection The collection to which the prompt belongs
+     * @param _type The type of the prompt
+     */
     function mint(address to, uint id, uint _collection, uint _type) public {
         // The oracle is the only one who can mint new prompts.
         require(msg.sender == minter, "Only the oracle can mint new prompts!");
