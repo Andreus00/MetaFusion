@@ -25,7 +25,7 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "./Prompt.sol";
 
 struct ImageMetadata {
-    uint seed;
+    uint256 seed;
     uint[5] prompts;
     bool is_finalized;
 }
@@ -35,7 +35,7 @@ contract MetaCard is ERC721 {
     address private oracle;  // the oracle
     address private owner;  // the owner of the contract; alias president
 
-    mapping (uint => ImageMetadata) public metadata;  // The seed used to generate the image. Everyone can read this.
+    mapping (uint256 => ImageMetadata) public metadata;  // The seed used to generate the image. Everyone can read this.
 
     string public baseURI = "https://metafusion.io/api/card/";  // The base URI for the metadata of the cards
 
@@ -51,7 +51,7 @@ contract MetaCard is ERC721 {
      * @param _seed 
      * @param _prompts 
      */
-    function mint(address to, uint id, uint _seed, uint[5] memory _prompts) public {
+    function mint(address to, uint id, uint256 _seed, uint[5] memory _prompts) public {
         // The oracle is the only one who can mint new cards.
         require(msg.sender == oracle, "Only the oracle can mint new cards!");
         _safeMint(to, id);

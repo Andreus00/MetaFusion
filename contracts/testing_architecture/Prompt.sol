@@ -25,9 +25,9 @@ contract MetaPrompt is ERC721 {
     address private minter;  // the oracle
     address private owner;  // the owner of the contract
 
-    uint private constant GENERATION_COST = 0.1 ether;  // The cost of generating an image
+    uint256 private constant GENERATION_COST = 0.1 ether;  // The cost of generating an image
 
-    uint private constant NUM_PROMPT_TYPES = 5;  // The number of different prompt types
+    uint8 private constant NUM_PROMPT_TYPES = 5;  // The number of different prompt types
 
     mapping (uint => bool) private frozen;  // true if the prompt is frozen, false otherwise
 
@@ -92,7 +92,7 @@ contract MetaPrompt is ERC721 {
         // first check if the ether sent is enough
         require(msg.value >= GENERATION_COST, "Not enough ether sent!");
         // then check that the sender owns all the prompts
-        for (uint i = 0; i < NUM_PROMPT_TYPES; i++) {
+        for (uint8 i = 0; i < NUM_PROMPT_TYPES; i++) {
             // if the prompt is 0, then it is not used
             if (_prompts[i] != 0) {
                 require(msg.sender == ownerOf(_prompts[i]), "Only the owner of the prompts can create an image!");
@@ -102,7 +102,7 @@ contract MetaPrompt is ERC721 {
             }
         }
         // then freeze all the prompts
-        for (uint i = 0; i < NUM_PROMPT_TYPES; i++) {
+        for (uint8 i = 0; i < NUM_PROMPT_TYPES; i++) {
             freeze(_prompts[i]);
         }
         // TODO: now send all the prompts to the oracle to mint the image

@@ -82,12 +82,12 @@ contract MetaPacket is ERC721 {
 		alreadyMinted[_collection] = 1;
 	}
 
-	function openPacket(uint id) public payable {
+	function openPacket(uint16 id) public payable {
 		// TODO: check if the owner sent enough ether to open the packet
 		require(msg.sender == ownerOf(id), "Only the owner of the packet can burn it!");
 
 		// get the current timestamp
-		uint timestamp = block.timestamp;
+		uint256 timestamp = block.timestamp;
 
 		
 		
@@ -95,8 +95,6 @@ contract MetaPacket is ERC721 {
 		// TODO: mock the oracle for now
 
 		// Burn the packet
-		_burn(id);
-		// remove the packet from collection
-		delete collection[id];
+		_burn(uint256(id));
 	}
 }
