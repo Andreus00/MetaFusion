@@ -19,7 +19,7 @@
     Everytime a card is transferred, the prompts must be transferred as well.
 */
 
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.19;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "./Prompt.sol";

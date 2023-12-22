@@ -16,7 +16,7 @@
  * belongs. This is stored in a mapping indexed by the prompt id.
  */
 
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.19;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
