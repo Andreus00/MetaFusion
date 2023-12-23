@@ -62,17 +62,17 @@ contract MetaPacket is ERC721 {
 		return MAX_PACKETS_PER_COLLECTION > alreadyMinted[_collection];
 	}
 
-	function genPKUUID(uint16 _collection, uint16 idInCollection) public view returns (uint32) {
+	function genPKUUID(uint16 _collection, uint16 idInCollection) public pure returns (uint32) {
 		return uint32(idInCollection) << 16 | uint32(_collection);
 	}
-	function getPacketIdInCollectionFromPKUUID(uint32 pkUuid) public view returns (uint16) {
+	function getPacketIdInCollectionFromPKUUID(uint32 pkUuid) public pure returns (uint16) {
 		return uint16(pkUuid >> 16); //& 0xffff; //Commented because we don't have any more field encoded
 	}
-	function getCollectionIdFromPKUUID(uint32 pkUuid) public view returns (uint16) {
+	function getCollectionIdFromPKUUID(uint32 pkUuid) public pure returns (uint16) {
 		return uint16(pkUuid & 0xffff);
 	}
 
-	function mint(address buyer, uint16 _collection) public collectionExists collectionIsNotFull onlyOwner{
+	function mint(address buyer, uint16 _collection) public collectionExists(_collection) collectionIsNotFull(_collection) onlyOwner{
 		// calculate the kacchak of alreadyMinted[_collection] + _collection
 		uint16 id = alreadyMinted[_collection];
 		uint256 packetUUid = uint256(genPKUUID(_collection, id));
@@ -80,7 +80,7 @@ contract MetaPacket is ERC721 {
 		alreadyMinted[_collection]++;
 	}
 
-	function forgeCollection(uint16 _collection) public collectionNotExists onlyOwner {
+	function forgeCollection(uint16 _collection) public collectionNotExists(_collection) onlyOwner {
 		alreadyMinted[_collection] = 1;
 	}
 
