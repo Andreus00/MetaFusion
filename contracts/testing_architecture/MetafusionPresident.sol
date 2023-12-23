@@ -22,6 +22,16 @@ contract MetaFusionPresident {
 
     string public baseURI = "https://metafusion.io/api/";  // The base URI for the metadata of the cards
 
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Only the owner of the contract can forge new collections!");
+        _;
+    }
+
+    modifier checkPacketCost() {
+        require(msg.value >= packetCost, "You didn't send enought ethers!");
+        _;
+    }
+
     constructor() { // The name and symbol of the token
         oracle = msg.sender;    // I still don't know how to use the oracle
         owner = msg.sender;    // The owner of the contract is the one who deployed it
@@ -36,20 +46,16 @@ contract MetaFusionPresident {
      * Forge a collection.
      * @param _collection The collection to forge
      */
-    function forgeCollection(uint _collection) public {
-        // The owner of the contract is the only one who can forge new collections.
-        require(msg.sender == owner, "Only the owner of the contract can forge new collections!");
-        require(!metaPacket.checkCollectionExistence(_collection), "The collection already exists!");
+    function forgeCollection(uint16 _collection) public onlyOwner {
         metaPacket.forgeCollection(_collection);
     }
 
-    function checkCollectionExistence(uint collection) public view returns (bool) {
+    function checkCollectionExistence(uint16 collection) public view returns (bool) {
         return metaPacket.checkCollectionExistence(collection);        
     }
 
-    function forgePacket(uint collection) public payable {
+    function forgePacket(uint16 collection) public payable checkPacketCost {
         // metaPacket.
-        require(msg.value >= packetCost, "You didn't send enought ethers!");
         metaPacket.mint(msg.sender, collection);
     }
 }
