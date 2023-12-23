@@ -44,13 +44,6 @@ contract MetaCard is ERC721 {
         owner = msg.sender;    // The owner of the contract is the one who deployed it
     }
 
-    /**
-     * 
-     * @param to 
-     * @param id 
-     * @param _seed 
-     * @param _prompts 
-     */
     function mint(address to, uint id, uint256 _seed, uint[5] memory _prompts) public {
         // The oracle is the only one who can mint new cards.
         require(msg.sender == oracle, "Only the oracle can mint new cards!");
