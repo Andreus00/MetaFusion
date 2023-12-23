@@ -22,6 +22,8 @@ contract MetaFusionPresident {
 
     string public baseURI = "https://metafusion.io/api/";  // The base URI for the metadata of the cards
 
+    event PacketForged(address indexed blacksmith, uint32 packetUUid);
+
     modifier onlyOwner() {
         require(msg.sender == owner, "Only the owner of the contract can forge new collections!");
         _;
@@ -54,21 +56,22 @@ contract MetaFusionPresident {
         return metaPacket.checkCollectionExistence(collection);        
     }
 
-    function forgePacket(uint16 collection) public payable checkPacketCost {
+    function forgePacket(uint16 collection) public payable checkPacketCost{
         // metaPacket.
-        metaPacket.mint(msg.sender, collection);
+        uint32 packetUUid = metaPacket.mint(msg.sender, collection);
+        emit PacketForged(msg.sender, packetUUid);
     }
 
     function openPacket(uint32 packetID) public {
         // metaPacket.
         uint256 generation_seed;
         uint16 collection;
-        (generation_seed, collection) = metaPacket.openPacket(packetID);
+        (generation_seed, collection) = metaPacket.openPacket(msg.sender, packetID);
         // todo: call the oracle and get the prompts
         // mock
         for (uint8 i = 0; i < 6; i++) {
             uint256 card_id = uint256(keccak256(abi.encodePacked(generation_seed, i)));
-            metaPrompt.mint(msg.sender, card_id, collection, i);
+            // metaPrompt.mint(msg.sender, card_id, collection, i);
         }
     }
 }

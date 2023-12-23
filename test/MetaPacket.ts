@@ -12,6 +12,10 @@ import {
 
 describe("MetafusionPresident", function () {
 
+    function genPKUUID(collection: number | bigint | boolean, idInCollection: number | bigint | boolean){
+      return (BigInt(idInCollection) << BigInt(16)) | BigInt(collection)
+    }
+
     // async function switchAccount(metaFusionPresident, otherAccount) {
     //   return await metaFusionPresident.connect(otherAccount);
     //
@@ -52,6 +56,12 @@ describe("MetafusionPresident", function () {
       await metaFusionPresident.forgeCollection(0);        // Forge a collection
       
       return { metaFusionPresident, owner, otherAccount };
+    }
+
+    async function deployMetafusionCreateCollectionThenSwitchAccount() {
+      const {metaFusionPresident, owner, otherAccount } = await deployMetafusionAndCreateCollection()
+      const mfp = await metaFusionPresident.connect(otherAccount);
+      return { mfp, owner, otherAccount };
     }
   
     describe("ForgeCollection", function () {
@@ -114,6 +124,45 @@ describe("MetafusionPresident", function () {
         // check if the balance has decreased
         expect((user_balance - new_balance) == ethers.parseEther("0.1"));
       });
+    });
+
+    describe("OpenPacket", function () {
+      let etherAmount = { value: ethers.parseEther("1.0")}
+      
+      it("Open a correct packet", async function () {
+        const { mfp, owner, otherAccount } = await loadFixture(deployMetafusionCreateCollectionThenSwitchAccount);
+        let collectionForged = BigInt(0);
+        let idInCollection = BigInt(1);
+
+        
+        // buy/forge a new packet
+        // const receipt = await forge.wait();
+
+
+        // console.log(event[0].args?.blacksmith)
+        // console.log(event[0].args?.packetUUid)
+        // console.log((idInCollection << BigInt(16)) | collectionForged)
+        await expect(await mfp.forgePacket(0, etherAmount))
+                .to.emit(mfp, "PacketForged").withArgs(otherAccount.address, genPKUUID(collectionForged, idInCollection)); //uint32(idInCollection) << 16 | uint32(_collection)
+        
+            // open the new packet and check for the emitted event
+        // Receipt should now contain the logs
+
+        await expect(mfp.openPacket(genPKUUID(collectionForged, idInCollection))).not.to.be.reverted
+        // Get the values from the emitted event
+        // Retrieve the event arguments
+
+        // Access individual arguments
+
+
+        // Now you can assert or use these values as needed in your test
+        // expect(opener).to.equal(otherAccount.address);
+        // expect(collection).to.equal(0);
+        // expect(result).to.equal(forgeResult.toNumber());
+        // open the new packet
+        //expect(await mfp.openPacket(0)).to.equal(true);
+      })
+
     });
   });
   

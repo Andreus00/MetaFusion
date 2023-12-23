@@ -68,7 +68,7 @@ contract MetaPacket is ERC721 {
 	}
 
 	function genPKUUID(uint16 _collection, uint16 idInCollection) public pure returns (uint32) {
-		return uint32(idInCollection) << 16 | uint32(_collection);
+		return (uint32(idInCollection) << 16) | uint32(_collection);
 	}
 	function getPacketIdInCollectionFromPKUUID(uint32 pkUuid) public pure returns (uint16) {
 		return uint16(pkUuid >> 16); //& 0xffff; //Commented because we don't have any more field encoded
@@ -77,22 +77,26 @@ contract MetaPacket is ERC721 {
 		return uint16(pkUuid & 0xffff);
 	}
 
-	function mint(address buyer, uint16 _collection) public collectionExists(_collection) collectionIsNotFull(_collection) onlyOwner{
+	function mint(address buyer, uint16 _collection) public collectionExists(_collection) collectionIsNotFull(_collection) onlyOwner returns(uint32){
 		// calculate the kacchak of alreadyMinted[_collection] + _collection
 		uint16 id = alreadyMinted[_collection];
-		uint256 packetUUid = uint256(genPKUUID(_collection, id));
+		uint32 packetUUid32 = genPKUUID(_collection, id);
+		uint256 packetUUid = uint256(packetUUid32);
+
 		_safeMint(buyer, packetUUid);
 		alreadyMinted[_collection]++;
+
+		return packetUUid32;
 	}
 
 	function forgeCollection(uint16 _collection) public collectionNotExists(_collection) onlyOwnerMintsCollections {
 		alreadyMinted[_collection] = 1;
 	}
 
-	function openPacket(uint32 id) public payable onlyOwner returns (uint256, uint16) {
+	function openPacket(address opener, uint32 id) public payable onlyOwner returns (uint256, uint16) {
 		// calculate the seed from the id and then burn the packet.
 		// return the seed to the caller.
-		require(msg.sender == ownerOf(id), "Only the owner of the packet can burn it!");
+		require(opener == ownerOf(uint256(id)), "Only the owner of the packet can burn it!");
 
 		// get the current timestamp
 		uint256 timestamp = block.timestamp;
