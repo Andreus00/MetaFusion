@@ -63,6 +63,8 @@ describe("MetafusionPresident", function () {
       const mfp = await metaFusionPresident.connect(otherAccount);
       return { mfp, owner, otherAccount };
     }
+
+    
   
     describe("ForgeCollection", function () {
       it("Forge a collection", async function () {
@@ -134,11 +136,75 @@ describe("MetafusionPresident", function () {
         let collectionForged = BigInt(0);
         let idInCollection = BigInt(1);
 
-        await expect(await mfp.forgePacket(0, etherAmount))
+        await expect(mfp.forgePacket(0, etherAmount))
                 .to.emit(mfp, "PacketForged").withArgs(otherAccount.address, genPKUUID(collectionForged, idInCollection)); //uint32(idInCollection) << 16 | uint32(_collection)
-        await expect(mfp.openPacket(genPKUUID(collectionForged, idInCollection))).not.to.be.reverted
+        await expect(mfp.openPacket(genPKUUID(collectionForged, idInCollection))).not.to.be.reverted;
       })
 
+     
+      it("Open a packet owned by another user", async function () {
+        const { metaFusionPresident, owner, otherAccount } = await loadFixture(deployMetafusionAndCreateCollection);
+        let collectionForged = BigInt(0);
+        let idInCollection = BigInt(1);
+        
+        // make a new packet
+        await expect(metaFusionPresident.forgePacket(0, etherAmount))
+                .to.emit(metaFusionPresident, "PacketForged").withArgs(owner.address, genPKUUID(collectionForged, idInCollection)); //uint32(idInCollection) << 16 | uint32(_collection)
+        
+        // connect to another account
+        const mfp = await metaFusionPresident.connect(otherAccount);
+
+        // try to steal the packet
+        await expect(mfp.openPacket(genPKUUID(collectionForged, idInCollection)))
+                      .to.be.revertedWith("Only the owner of the packet can burn it!")
+
+     })
+
+     it("Open a packet that not exist", async function () {
+        const { metaFusionPresident, owner, otherAccount } = await loadFixture(deployMetafusionAndCreateCollection);
+        let collectionForged = BigInt(0);
+        let idInCollection = BigInt(1);
+        
+        // make a new packet
+        await expect(metaFusionPresident.forgePacket(collectionForged, etherAmount))
+                .to.emit(metaFusionPresident, "PacketForged");
+        
+
+        // try to open non existing packet
+        await expect(metaFusionPresident.openPacket(genPKUUID(collectionForged, idInCollection))).to.not.be.reverted;
+
+      })
+
+      it("Open a packet of not existing collection", async function () {
+        const { metaFusionPresident, owner, otherAccount } = await loadFixture(deployMetafusionAndCreateCollection);
+        let collectionForged = BigInt(0);
+        let idInCollection = BigInt(1);
+        
+        // make a new packet
+        await expect(metaFusionPresident.forgePacket(collectionForged, etherAmount))
+                .to.emit(metaFusionPresident, "PacketForged");
+        
+
+        // try to open packet of non existing collection
+        let wrongCollection = BigInt(420);
+        await expect(metaFusionPresident.openPacket(genPKUUID(wrongCollection, idInCollection))).to.be.reverted;
+
+      })
+
+      it("Open twise a packet", async function () {
+        const { metaFusionPresident, owner, otherAccount } = await loadFixture(deployMetafusionAndCreateCollection);
+        let collectionForged = BigInt(0);
+        let idInCollection = BigInt(1);
+        
+        // make a new packet
+        await expect(metaFusionPresident.forgePacket(collectionForged, etherAmount))
+                .to.emit(metaFusionPresident, "PacketForged");
+        
+
+        // try to open twise the packet
+        await expect(metaFusionPresident.openPacket(genPKUUID(collectionForged, idInCollection))).to.not.be.reverted;
+        await expect(metaFusionPresident.openPacket(genPKUUID(collectionForged, idInCollection))).to.be.reverted;
+      })
     });
   });
   
