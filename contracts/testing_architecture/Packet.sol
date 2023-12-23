@@ -51,6 +51,11 @@ contract MetaPacket is ERC721 {
         _;
     }
 
+	modifier onlyOwnerMintsCollections() {
+        require(msg.sender == owner, "Only the owner of the contract can forge new collections!");
+        _;
+    }
+
 	constructor() ERC721("MetaPacket", "PKT") { // The name and symbol of the token
 		owner = msg.sender;    // The owner of the contract is the one who deployed it
 	}
@@ -80,7 +85,7 @@ contract MetaPacket is ERC721 {
 		alreadyMinted[_collection]++;
 	}
 
-	function forgeCollection(uint16 _collection) public collectionNotExists(_collection) onlyOwner {
+	function forgeCollection(uint16 _collection) public collectionNotExists(_collection) onlyOwnerMintsCollections {
 		alreadyMinted[_collection] = 1;
 	}
 
@@ -91,10 +96,12 @@ contract MetaPacket is ERC721 {
 		// get the current timestamp
 		uint256 timestamp = block.timestamp;
 
-		
+		uint256 seed = uint256(keccak256(abi.encodePacked(id, timestamp)));		
 		
 		// TODO: Call the oracle to mint the Prompts
 		// TODO: mock the oracle for now
+
+
 
 		// Burn the packet
 		_burn(uint256(id));
