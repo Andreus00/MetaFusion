@@ -89,8 +89,9 @@ contract MetaPacket is ERC721 {
 		alreadyMinted[_collection] = 1;
 	}
 
-	function openPacket(uint16 id) public payable {
-		// TODO: check if the owner sent enough ether to open the packet
+	function openPacket(uint32 id) public payable onlyOwner returns (uint256, uint16) {
+		// calculate the seed from the id and then burn the packet.
+		// return the seed to the caller.
 		require(msg.sender == ownerOf(id), "Only the owner of the packet can burn it!");
 
 		// get the current timestamp
@@ -98,12 +99,8 @@ contract MetaPacket is ERC721 {
 
 		uint256 seed = uint256(keccak256(abi.encodePacked(id, timestamp)));		
 		
-		// TODO: Call the oracle to mint the Prompts
-		// TODO: mock the oracle for now
-
-
-
-		// Burn the packet
 		_burn(uint256(id));
+
+		return (seed, getCollectionIdFromPKUUID(id));
 	}
 }

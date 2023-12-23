@@ -58,4 +58,17 @@ contract MetaFusionPresident {
         // metaPacket.
         metaPacket.mint(msg.sender, collection);
     }
+
+    function openPacket(uint32 packetID) public {
+        // metaPacket.
+        uint256 generation_seed;
+        uint16 collection;
+        (generation_seed, collection) = metaPacket.openPacket(packetID);
+        // todo: call the oracle and get the prompts
+        // mock
+        for (uint8 i = 0; i < 6; i++) {
+            uint256 card_id = uint256(keccak256(abi.encodePacked(generation_seed, i)));
+            metaPrompt.mint(msg.sender, card_id, collection, i);
+        }
+    }
 }
