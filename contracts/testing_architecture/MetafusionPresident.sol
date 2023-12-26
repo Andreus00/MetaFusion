@@ -18,12 +18,15 @@ contract MetaFusionPresident {
 
     uint constant packetCost = 0.1 ether;
 
-    mapping (address => ImageMetadata[]) public metadata;  // The seed used to generate the image. Everyone can read this.
-
     string public baseURI = "https://metafusion.io/api/";  // The base URI for the metadata of the cards
 
-    event PacketForged(address indexed blacksmith, uint32 packetUUid);
+    uint32 public constant NUM_PROMPT_TYPES = 6;  // The number of different prompt types
+    uint8 public constant PACKET_SIZE = 8;  // The number of different prompt types
 
+    event PacketForged(address indexed blacksmith, uint32 packetUUid);
+    event PacketOpened(address indexed opener, uint32[] prompts);
+    event CreateImage(address indexed creator, uint256 prompts);
+    
     modifier onlyOwner() {
         require(msg.sender == owner, "Only the owner of the contract can forge new collections!");
         _;
@@ -34,13 +37,14 @@ contract MetaFusionPresident {
         _;
     }
 
+
     constructor() { // The name and symbol of the token
         oracle = msg.sender;    // I still don't know how to use the oracle
         owner = msg.sender;    // The owner of the contract is the one who deployed it
 
         // create the meta contracts
-        metaPacket = new MetaPacket();
-        metaPrompt = new MetaPrompt();
+        metaPacket = new MetaPacket(PACKET_SIZE);
+        metaPrompt = new MetaPrompt(NUM_PROMPT_TYPES);
         metaCard = new MetaCard();
     }
 
@@ -74,20 +78,58 @@ contract MetaFusionPresident {
         emit PacketForged(msg.sender, packetUUid);
     }
 
-    function openPacket(uint32 packetID) public {
-        // metaPacket.
-        uint256 generation_seed;
-        uint16 collection;
-        (generation_seed, collection) = metaPacket.openPacket(msg.sender, packetID);
-        // todo: call the oracle and get the prompts
-        // mock
-        for (uint8 i = 0; i < 6; i++) {
-            uint256 card_id = uint256(keccak256(abi.encodePacked(generation_seed, i)));
-            metaPrompt.mint(msg.sender, card_id, collection, i);
-        }
+    function getPromptId(uint32 packetID, uint8 promptIndex, uint8 promptType) public pure returns (uint32) {
+        uint32 shiftedPromptIndex = uint32(promptIndex) << (16 + 13);
+        uint32 shiftedPromptType = uint32(promptType) << 13;
+        return shiftedPromptIndex | shiftedPromptType | packetID;  // safe until we use less than 8192 packets per collection and less then 8192 collections
     }
 
-    function getPromptList(address _address) public view returns (uint[] memory) {
+    function openPacket(uint32 packetID) public payable {
+        // metaPacket.
+        metaPacket.openPacket(msg.sender, packetID);
+        // todo: call the oracle and get the prompts
+        // mock
+        uint32[] memory prompts = new uint32[](PACKET_SIZE);
+        for (uint8 i = 0; i < PACKET_SIZE; i++) {
+            
+            uint256 idhash = uint256(keccak256(abi.encodePacked(packetID, i, block.timestamp)));
+            uint8 prompt_type = uint8(idhash % NUM_PROMPT_TYPES);
+
+            uint32 promptId = getPromptId(packetID, i, prompt_type); // embedding informations
+
+            // get the prompt type from the hash
+
+            metaPrompt.mint(msg.sender, promptId);
+            prompts[i] = promptId;
+        }
+
+        emit PacketOpened(msg.sender, prompts);
+    }
+
+    function getPromptList(address _address) public view returns (uint32[] memory) {
         return metaPrompt.getPromptList(_address);
+    }
+
+    function mergePrompts(uint32[NUM_PROMPT_TYPES] memory prompts) public pure returns (uint256) {
+        uint256 merged = 0;
+        for (uint8 i = 0; i < NUM_PROMPT_TYPES; i++)
+            merged = (merged << 32) | uint256(prompts[i]);
+        return merged;
+    }
+
+    function createImage(uint32[NUM_PROMPT_TYPES] memory prompts) public payable {
+        require(prompts.length == NUM_PROMPT_TYPES, string(abi.encodePacked("You shall pass the exact number of prompts: ", NUM_PROMPT_TYPES)));
+        uint32[] memory prompts_array = new uint32[](NUM_PROMPT_TYPES);
+        for (uint32 i = 0; i < NUM_PROMPT_TYPES; i++) {
+            uint32 prompt_id = prompts[i];
+            prompts_array[i] = prompt_id;
+        }
+        metaPrompt.freezePrompts(msg.sender, prompts_array);
+
+        // mint the card
+        uint256 mergedPrompts = mergePrompts(prompts);
+        uint256 cardId = metaCard.mint(msg.sender, mergedPrompts);
+
+        emit CreateImage(msg.sender, cardId);
     }
 }

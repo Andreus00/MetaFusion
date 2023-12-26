@@ -21,6 +21,16 @@ pragma solidity ^0.8.19;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
+/**
+ * ID: 0-15 collection
+ *    16-31 packet id in collection
+ * 	  [31, 30, 29, 28, 27, 26, 25, 24, 23, 22, ... , 3, 2, 1, 0]
+ * 
+ * @title 
+ * @author 
+ * @notice 
+ */
+
 contract MetaPacket is ERC721 {
 
 	address private owner;  // the owner of the contract
@@ -28,9 +38,10 @@ contract MetaPacket is ERC721 {
 	mapping (uint16 => uint16) public alreadyMinted;  // Mapping from collection to the number of packets already minted for that collection. 0 if the collection does not exist.
 
 	uint16 constant MAX_PACKETS_PER_COLLECTION = 1000;  // The maximum number of packets that can be minted for each collection.
+	uint8 immutable private PACKET_SIZE;
 
 	string public baseURI = "https://metafusion.io/api/packet/";  // The base URI for the metadata of the packets; alias besughi
-	
+
     modifier collectionExists(uint16 _collection) {
         require(checkCollectionExistence(_collection), "The collection does not exist!");
         _;
@@ -55,9 +66,15 @@ contract MetaPacket is ERC721 {
         require(msg.sender == owner, "Only the owner of the contract can forge new collections!");
         _;
     }
+	
+	modifier onlyPacketOwner(uint32 id, address opener) {
+		require(opener == ownerOf(uint256(id)), "Only the owner of the packet can burn it!");
+		_;
+	}
 
-	constructor() ERC721("MetaPacket", "PKT") { // The name and symbol of the token
+	constructor(uint8 _PACKET_SIZE) ERC721("MetaPacket", "PKT") { // The name and symbol of the token
 		owner = msg.sender;    // The owner of the contract is the one who deployed it
+		PACKET_SIZE = _PACKET_SIZE;
 	}
 
 	function checkCollectionExistence(uint16 _collection) public view returns (bool) {
@@ -66,7 +83,6 @@ contract MetaPacket is ERC721 {
 	function checkIfCollectionIsFull(uint16 _collection) public view returns (bool) {
 		return MAX_PACKETS_PER_COLLECTION > alreadyMinted[_collection];
 	}
-
 	function genPKUUID(uint16 _collection, uint16 idInCollection) public pure returns (uint32) {
 		return (uint32(idInCollection) << 16) | uint32(_collection);
 	}
@@ -93,18 +109,11 @@ contract MetaPacket is ERC721 {
 		alreadyMinted[_collection] = 1;
 	}
 
-	function openPacket(address opener, uint32 id) public payable onlyOwner returns (uint256, uint16) {
-		// calculate the seed from the id and then burn the packet.
-		// return the seed to the caller.
-		require(opener == ownerOf(uint256(id)), "Only the owner of the packet can burn it!");
+	function makePromptID() public returns (uint64) {
 
-		// get the current timestamp
-		uint256 timestamp = block.timestamp;
+	}
 
-		uint256 seed = uint256(keccak256(abi.encodePacked(id, timestamp)));		
-		
+	function openPacket(address opener, uint32 id) public payable onlyOwner onlyPacketOwner(id, opener) {
 		_burn(uint256(id));
-
-		return (seed, getCollectionIdFromPKUUID(id));
 	}
 }

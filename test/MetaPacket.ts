@@ -77,14 +77,14 @@ describe("MetafusionPresident", function () {
 
       // Forge a packet
       let etherAmount = { value: ethers.parseEther("1.0")}
-      metaFusionPresident.forgePacket(0, etherAmount)
+      await metaFusionPresident.forgePacket(0, etherAmount)
 
-      let id = BigInt(1);
       let collection = BigInt(0);
-      let pkUUID = genPKUUID(id, collection);
+      let idInCollection = BigInt(1);
+      let pkUUID = genPKUUID(collection, idInCollection);
 
       // Open the packet
-      metaFusionPresident.openPacket(pkUUID)
+      await metaFusionPresident.openPacket(pkUUID)
             
       return { metaFusionPresident, owner, otherAccount };
     }
@@ -168,7 +168,8 @@ describe("MetafusionPresident", function () {
 
         await expect(mfp.forgePacket(0, etherAmount))
                 .to.emit(mfp, "PacketForged").withArgs(otherAccount.address, genPKUUID(collectionForged, idInCollection)); //uint32(idInCollection) << 16 | uint32(_collection)
-        await expect(mfp.openPacket(genPKUUID(collectionForged, idInCollection))).not.to.be.reverted;
+        await expect(mfp.openPacket(genPKUUID(collectionForged, idInCollection)))
+          .to.emit(mfp, "PacketOpened");
       })
 
      
@@ -202,7 +203,6 @@ describe("MetafusionPresident", function () {
 
         // try to open non existing packet
         await expect(metaFusionPresident.openPacket(genPKUUID(collectionForged, idInCollection))).to.not.be.reverted;
-
       })
 
       it("Open a packet of not existing collection", async function () {
@@ -237,8 +237,8 @@ describe("MetafusionPresident", function () {
       })
 
       it("Check Prompts generation", async function () {
-        const NUM_PROMPTS = 6;
         const { metaFusionPresident, owner, otherAccount } = await loadFixture(deployMetafusionAndOpenPacket);
+        const NUM_PROMPTS = await metaFusionPresident.PACKET_SIZE();
         
         // check if all the prompts have been added to the account
         let promptList = await metaFusionPresident.getPromptList(owner.address);
@@ -246,6 +246,9 @@ describe("MetafusionPresident", function () {
         expect(promptList.length).to.equal(NUM_PROMPTS);
         expect(new Set(promptList).size).to.equal(NUM_PROMPTS);
       })
+
+      it("Check ", function(){}
+      )
     });
   });
   

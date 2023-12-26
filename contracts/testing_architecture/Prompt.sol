@@ -19,7 +19,13 @@
 pragma solidity ^0.8.19;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-
+/**
+ * ID: 0-12 collection
+ *    13-15 prompt type
+ *    16-28 packet id in collection
+ *    29-31 sequence number of the prompt in packet
+ * 	  [31, 30, 29, 28, 27, 26, 25, 24, 23, 22, ... , 3, 2, 1, 0]
+ *  */
 contract MetaPrompt is ERC721 {
 
     address private minter;  // the oracle
@@ -27,13 +33,12 @@ contract MetaPrompt is ERC721 {
 
     uint256 private constant GENERATION_COST = 0.1 ether;  // The cost of generating an image
 
-    uint8 private constant NUM_PROMPT_TYPES = 5;  // The number of different prompt types
+    uint32 public immutable NUM_PROMPT_TYPES;  // The number of different prompt types
+    
+    mapping (uint32 => bool) private frozen;  // true if the prompt is frozen, false otherwise
 
-    mapping (uint => bool) private frozen;  // true if the prompt is frozen, false otherwise
-
-    mapping (uint => uint[2]) private collection_type;  // The collection and type to which the prompt belongs. Everyone can read this.
-
-    mapping (address => uint[]) private prompt_list;  // The list of prompts owned by an address. Everyone can read this.
+    mapping (address => uint32[]) private prompt_list;  // TODO: remove this as it is only for debugging. 
+                                                        // The list of prompts owned by an address. Everyone can read this.
 
     string public baseURI = "https://metafusion.io/api/prompt/";  // The base URI for the metadata of the prompts
 
@@ -41,14 +46,16 @@ contract MetaPrompt is ERC721 {
         require(msg.sender == owner, "You're not the owner!");
         _;
     }
+
 	modifier onlyMinter() {
         require(msg.sender == minter, "You're not the minter!");
         _;
     }
 
-    constructor() ERC721("MetaPrompt", "PRM") { // The name and symbol of the token
+    constructor(uint32 _NUM_PROMPT_TYPES) ERC721("MetaPrompt", "PRM") { // The name and symbol of the token
         minter = msg.sender;    // I still don't know how to use the oracle
         owner = msg.sender;    // The owner of the contract is the one who deployed it
+        NUM_PROMPT_TYPES = _NUM_PROMPT_TYPES;
     }
 
     function setOracle(address _oracle) public onlyOwner {
@@ -60,38 +67,42 @@ contract MetaPrompt is ERC721 {
      * 
      * @param to The address of the receiver
      * @param id The hash of the prompt (keccak256(prompt + "series number"))
-     * @param _collection The collection to which the prompt belongs
-     * @param _type The type of the prompt
      */
-    function mint(address to, uint id, uint16 _collection, uint8 _type) public onlyMinter {
+    function mint(address to, uint32 id) public onlyMinter {
         // The oracle is the only one who can mint new prompts.s
-        _safeMint(to, id);
-        collection_type[id][0] = _collection;
-        collection_type[id][1] = _type;
+        _safeMint(to, uint256(id));
         prompt_list[to].push(id);
     }
 
-    function freeze(address promptOwner, uint id) private {
+    function freeze(address promptOwner, uint32 id) private {
         require(promptOwner == ownerOf(id), "Only the owner of the prompt can freeze it!");
         require(!isFrozen(id), "The prompt is already frozen!");
         frozen[id] = true;
     }
 
-    function unfreeze(address promptOwner, uint id) private {
+    function unfreeze(address promptOwner, uint32 id) private {
         require(promptOwner == ownerOf(id), "Only the owner of the prompt can unfreeze it!");
         require(isFrozen(id), "The prompt is already unfrozen!");
         frozen[id] = false;
     }
 
-    function isFrozen(uint id) public view returns (bool) {
+    function isFrozen(uint32 id) public view returns (bool) {
         return frozen[id];
     }
 
-    function getPromptList(address _address) public view returns (uint[] memory) {
+    function getPromptList(address _address) public view returns (uint32[] memory) {
         return prompt_list[_address];
     }
 
-    function createImage(address promptOwner, uint[5] memory _prompts) public payable onlyOwner{
+    function getCollectionId(uint32 promptId) public pure returns (uint16){
+        return uint16(promptId & 0x1fff);
+    }
+
+    function getPromptType(uint32 promptId) public pure returns (uint8){
+        return uint8((promptId >> 13) & 0x7);
+    }
+
+    function freezePrompts(address promptOwner, uint32[] memory _prompts) public payable onlyOwner {
         /**
          * This function first checks if all the requirements are met, then freezes
          * the prompts and finally calls the oracle to mint the image.
@@ -99,20 +110,27 @@ contract MetaPrompt is ERC721 {
         // first check if the ether sent is enough
         require(msg.value >= GENERATION_COST, "Not enough ether sent!");
         // then check that the sender owns all the prompts
+        
+        uint8 invalidPrompts = 0;
         for (uint8 i = 0; i < NUM_PROMPT_TYPES; i++) {
             // if the prompt is 0, then it is not used
+            uint16 collectionId = getCollectionId(_prompts[0]);
             if (_prompts[i] != 0) {
                 require(promptOwner == ownerOf(_prompts[i]), "Only the owner of the prompts can create an image!");
                 require(!frozen[_prompts[i]], "The prompt is frozen!");
-                require(collection_type[_prompts[i]][0] == collection_type[_prompts[0]][0], "The prompts must belong to the same collection!");
-                require(collection_type[_prompts[i]][1] == i, "The prompts must be of the correct type!");
+                require(getCollectionId(_prompts[i]) == collectionId, "The prompts must belong to the same collection!");
+                require(getPromptType(_prompts[i]) == i, "The prompts must be of the correct type!");
             }
+            else {
+                invalidPrompts++;
+            }
+        }
+        if (invalidPrompts == NUM_PROMPT_TYPES) {
+            revert("No prompts used!");
         }
         // then freeze all the prompts
         for (uint8 i = 0; i < NUM_PROMPT_TYPES; i++) {
             freeze(promptOwner, _prompts[i]);
-        }
-        // TODO: now send all the prompts to the oracle to mint the image
-        // TODO: mock the oracle for now
+        }        
     }
 }

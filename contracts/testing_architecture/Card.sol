@@ -23,34 +23,56 @@ pragma solidity ^0.8.19;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "./Prompt.sol";
-
+/*
 struct ImageMetadata {
     uint256 seed;
     uint[5] prompts;
     bool is_finalized;
 }
+*/
+
+/**
+ * CARD ENCODING
+ * 256 bits uint
+ * [ MSB
+ *  NUM_PROMPT_TYPES x 32 bits,
+ *  64 bits of random seed
+ * ]LSB
+ */
 
 contract MetaCard is ERC721 {
 
-    address private oracle;  // the oracle
+    address private minter;  // the oracle
     address private owner;  // the owner of the contract; alias president
-
-    mapping (uint256 => ImageMetadata) public metadata;  // The seed used to generate the image. Everyone can read this.
-
+    
     string public baseURI = "https://metafusion.io/api/card/";  // The base URI for the metadata of the cards
 
+	modifier onlyMinter() {
+        require(msg.sender == minter, "You're not the minter!");
+        _;
+    }
+
     constructor() ERC721("MetaCard", "MCD") { // The name and symbol of the token
-        oracle = msg.sender;    // I still don't know how to use the oracle
+        minter = msg.sender;    // I still don't know how to use the oracle
         owner = msg.sender;    // The owner of the contract is the one who deployed it
     }
 
-    function mint(address to, uint id, uint256 _seed, uint[5] memory _prompts) public {
+    function breakImage() payable public returns(uint32[] memory){
+        // TODO 
+        return new uint32[](0);
+    }
+
+    function mint(address to, uint256 cardPrompts) public onlyMinter returns(uint256) {
         // The oracle is the only one who can mint new cards.
-        require(msg.sender == oracle, "Only the oracle can mint new cards!");
-        _safeMint(to, id);
-        metadata[id].seed = _seed;
-        metadata[id].prompts = _prompts;
-        metadata[id].is_finalized = false;
+        // calculate the 64 bits of the seed
+        uint256 seed = uint256(keccak256(abi.encodePacked(cardPrompts, block.timestamp)));
+        cardPrompts = (cardPrompts << 64) | (seed >> (256 - 64)); // put the seed into the first 64 bits 
+
+        _safeMint(to, cardPrompts);
+        // metadata[id].seed = _seed;
+        // metadata[id].prompts = _prompts;
+        // metadata[id].is_finalized = false;
+        return cardPrompts;
     }
 
     function transfer(address to, uint id) public {
