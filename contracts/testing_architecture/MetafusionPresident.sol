@@ -20,7 +20,7 @@ contract MetaFusionPresident {
 
     string public baseURI = "https://metafusion.io/api/";  // The base URI for the metadata of the cards
 
-    uint32 public constant NUM_PROMPT_TYPES = 6;  // The number of different prompt types
+    uint8 public constant NUM_PROMPT_TYPES = 6;  // The number of different prompt types
     uint8 public constant PACKET_SIZE = 8;  // The number of different prompt types
 
     event PacketForged(address indexed blacksmith, uint32 packetUUid);
@@ -110,26 +110,36 @@ contract MetaFusionPresident {
         return metaPrompt.getPromptList(_address);
     }
 
-    function mergePrompts(uint32[NUM_PROMPT_TYPES] memory prompts) public pure returns (uint256) {
+    function mergePrompts(uint8[NUM_PROMPT_TYPES] memory prompts) public pure returns (uint256) {
         uint256 merged = 0;
         for (uint8 i = 0; i < NUM_PROMPT_TYPES; i++)
             merged = (merged << 32) | uint256(prompts[i]);
         return merged;
     }
 
-    function createImage(uint32[NUM_PROMPT_TYPES] memory prompts) public payable {
+    function createImage(uint8[NUM_PROMPT_TYPES] memory prompts) public payable {
         require(prompts.length == NUM_PROMPT_TYPES, string(abi.encodePacked("You shall pass the exact number of prompts: ", NUM_PROMPT_TYPES)));
         uint32[] memory prompts_array = new uint32[](NUM_PROMPT_TYPES);
         for (uint32 i = 0; i < NUM_PROMPT_TYPES; i++) {
             uint32 prompt_id = prompts[i];
             prompts_array[i] = prompt_id;
         }
-        metaPrompt.freezePrompts(msg.sender, prompts_array);
+        metaPrompt.burnForImageGeneration(msg.sender, prompts_array);
 
         // mint the card
         uint256 mergedPrompts = mergePrompts(prompts);
         uint256 cardId = metaCard.mint(msg.sender, mergedPrompts);
 
         emit CreateImage(msg.sender, cardId);
+    }
+
+    function burnImageAndRecoverPrompts(uint256 imageId) public payable {
+        for(uint8 i = 0; i < NUM_PROMPT_TYPES; i++){
+            imageId >>= 32;
+            uint32 currentPromptId = uint32(imageId & 0xffffffff);
+            metaPrompt.mint(msg.sender, currentPromptId);
+        }
+        
+        metaCard.destroyCard(imageId);
     }
 }

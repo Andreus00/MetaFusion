@@ -57,9 +57,8 @@ contract MetaCard is ERC721 {
         owner = msg.sender;    // The owner of the contract is the one who deployed it
     }
 
-    function breakImage() payable public returns(uint32[] memory){
-        // TODO 
-        return new uint32[](0);
+    function destroyCard(uint256 imageId) payable public {
+        _burn(imageId);
     }
 
     function mint(address to, uint256 cardPrompts) public onlyMinter returns(uint256) {
@@ -73,10 +72,5 @@ contract MetaCard is ERC721 {
         // metadata[id].prompts = _prompts;
         // metadata[id].is_finalized = false;
         return cardPrompts;
-    }
-
-    function transfer(address to, uint id) public {
-        require(msg.sender == ownerOf(id), "Only the owner of the card can transfer it!");
-        _transfer(msg.sender, to, id);
     }
 }

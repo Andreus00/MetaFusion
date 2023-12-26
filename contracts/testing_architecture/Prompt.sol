@@ -35,8 +35,6 @@ contract MetaPrompt is ERC721 {
 
     uint32 public immutable NUM_PROMPT_TYPES;  // The number of different prompt types
     
-    mapping (uint32 => bool) private frozen;  // true if the prompt is frozen, false otherwise
-
     mapping (address => uint32[]) private prompt_list;  // TODO: remove this as it is only for debugging. 
                                                         // The list of prompts owned by an address. Everyone can read this.
 
@@ -74,22 +72,6 @@ contract MetaPrompt is ERC721 {
         prompt_list[to].push(id);
     }
 
-    function freeze(address promptOwner, uint32 id) private {
-        require(promptOwner == ownerOf(id), "Only the owner of the prompt can freeze it!");
-        require(!isFrozen(id), "The prompt is already frozen!");
-        frozen[id] = true;
-    }
-
-    function unfreeze(address promptOwner, uint32 id) private {
-        require(promptOwner == ownerOf(id), "Only the owner of the prompt can unfreeze it!");
-        require(isFrozen(id), "The prompt is already unfrozen!");
-        frozen[id] = false;
-    }
-
-    function isFrozen(uint32 id) public view returns (bool) {
-        return frozen[id];
-    }
-
     function getPromptList(address _address) public view returns (uint32[] memory) {
         return prompt_list[_address];
     }
@@ -102,7 +84,7 @@ contract MetaPrompt is ERC721 {
         return uint8((promptId >> 13) & 0x7);
     }
 
-    function freezePrompts(address promptOwner, uint32[] memory _prompts) public payable onlyOwner {
+    function burnForImageGeneration(address promptOwner, uint32[] memory _prompts) public payable onlyOwner {
         /**
          * This function first checks if all the requirements are met, then freezes
          * the prompts and finally calls the oracle to mint the image.
@@ -117,7 +99,6 @@ contract MetaPrompt is ERC721 {
             uint16 collectionId = getCollectionId(_prompts[0]);
             if (_prompts[i] != 0) {
                 require(promptOwner == ownerOf(_prompts[i]), "Only the owner of the prompts can create an image!");
-                require(!frozen[_prompts[i]], "The prompt is frozen!");
                 require(getCollectionId(_prompts[i]) == collectionId, "The prompts must belong to the same collection!");
                 require(getPromptType(_prompts[i]) == i, "The prompts must be of the correct type!");
             }
@@ -130,7 +111,7 @@ contract MetaPrompt is ERC721 {
         }
         // then freeze all the prompts
         for (uint8 i = 0; i < NUM_PROMPT_TYPES; i++) {
-            freeze(promptOwner, _prompts[i]);
-        }        
+            _burn(_prompts[i]);
+        }
     }
 }
