@@ -71,7 +71,7 @@ contract MetaFusionPresident {
         // mock
         for (uint8 i = 0; i < 6; i++) {
             uint256 card_id = uint256(keccak256(abi.encodePacked(generation_seed, i)));
-            // metaPrompt.mint(msg.sender, card_id, collection, i);
+            metaPrompt.mint(msg.sender, card_id, collection, i);
         }
     }
 }
