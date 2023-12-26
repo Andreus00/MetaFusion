@@ -44,6 +44,18 @@ contract MetaFusionPresident {
         metaCard = new MetaCard();
     }
 
+    function ownerOfPacket(uint256 _tokenId) public view returns (address) {
+        return metaPacket.ownerOf(_tokenId);
+    }
+    
+    function ownerOfPrompt(uint256 _tokenId) public view returns (address) {
+        return metaPrompt.ownerOf(_tokenId);
+    }
+
+    function ownerOfCard(uint256 _tokenId) public view returns (address) {
+        return metaCard.ownerOf(_tokenId);
+    }
+
     /**
      * Forge a collection.
      * @param _collection The collection to forge
@@ -71,7 +83,11 @@ contract MetaFusionPresident {
         // mock
         for (uint8 i = 0; i < 6; i++) {
             uint256 card_id = uint256(keccak256(abi.encodePacked(generation_seed, i)));
-            // metaPrompt.mint(msg.sender, card_id, collection, i);
+            metaPrompt.mint(msg.sender, card_id, collection, i);
         }
+    }
+
+    function getPromptList(address _address) public view returns (uint[] memory) {
+        return metaPrompt.getPromptList(_address);
     }
 }

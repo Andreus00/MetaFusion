@@ -8,6 +8,7 @@ import {
   import { expect } from "chai";
   import { ethers } from "hardhat";
   import { describe } from "mocha";
+import { metafusionPresidentSol } from "../typechain-types/factories/contracts/testing_architecture";
 
 
 describe("MetafusionPresident", function () {
@@ -64,6 +65,35 @@ describe("MetafusionPresident", function () {
       return { mfp, owner, otherAccount };
     }
 
+    async function deployMetafusionAndOpenPacket() {
+      // Contracts are deployed using the first signer/account by default
+      const [owner, otherAccount] = await ethers.getSigners();
+  
+      const MetaFusionPresident = await ethers.getContractFactory("MetaFusionPresident");
+      const metaFusionPresident = await MetaFusionPresident.deploy();
+
+      // Forge a collection
+      await metaFusionPresident.forgeCollection(0);        // Forge a collection
+
+      // Forge a packet
+      let etherAmount = { value: ethers.parseEther("1.0")}
+      metaFusionPresident.forgePacket(0, etherAmount)
+
+      let id = BigInt(1);
+      let collection = BigInt(0);
+      let pkUUID = genPKUUID(id, collection);
+
+      // Open the packet
+      metaFusionPresident.openPacket(pkUUID)
+            
+      return { metaFusionPresident, owner, otherAccount };
+    }
+
+    async function deployMetafusionAndOpenPacketThenSwitchAccount() {
+      const {metaFusionPresident, owner, otherAccount } = await deployMetafusionAndOpenPacket()
+      const mfp = await metaFusionPresident.connect(otherAccount);
+      return { mfp, owner, otherAccount };
+    }
     
   
     describe("ForgeCollection", function () {
@@ -191,7 +221,7 @@ describe("MetafusionPresident", function () {
 
       })
 
-      it("Open twise a packet", async function () {
+      it("Open a packet twice", async function () {
         const { metaFusionPresident, owner, otherAccount } = await loadFixture(deployMetafusionAndCreateCollection);
         let collectionForged = BigInt(0);
         let idInCollection = BigInt(1);
@@ -204,6 +234,17 @@ describe("MetafusionPresident", function () {
         // try to open twise the packet
         await expect(metaFusionPresident.openPacket(genPKUUID(collectionForged, idInCollection))).to.not.be.reverted;
         await expect(metaFusionPresident.openPacket(genPKUUID(collectionForged, idInCollection))).to.be.reverted;
+      })
+
+      it("Check Prompts generation", async function () {
+        const NUM_PROMPTS = 6;
+        const { metaFusionPresident, owner, otherAccount } = await loadFixture(deployMetafusionAndOpenPacket);
+        
+        // check if all the prompts have been added to the account
+        let promptList = await metaFusionPresident.getPromptList(owner.address);
+        // check that the list contains 6 unique prompts
+        expect(promptList.length).to.equal(NUM_PROMPTS);
+        expect(new Set(promptList).size).to.equal(NUM_PROMPTS);
       })
     });
   });

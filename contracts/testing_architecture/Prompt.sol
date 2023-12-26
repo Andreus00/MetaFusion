@@ -31,7 +31,9 @@ contract MetaPrompt is ERC721 {
 
     mapping (uint => bool) private frozen;  // true if the prompt is frozen, false otherwise
 
-    mapping (uint => uint[2]) public collection_type;  // The collection and type to which the prompt belongs. Everyone can read this.
+    mapping (uint => uint[2]) private collection_type;  // The collection and type to which the prompt belongs. Everyone can read this.
+
+    mapping (address => uint[]) private prompt_list;  // The list of prompts owned by an address. Everyone can read this.
 
     string public baseURI = "https://metafusion.io/api/prompt/";  // The base URI for the metadata of the prompts
 
@@ -66,6 +68,7 @@ contract MetaPrompt is ERC721 {
         _safeMint(to, id);
         collection_type[id][0] = _collection;
         collection_type[id][1] = _type;
+        prompt_list[to].push(id);
     }
 
     function freeze(uint id) private {
@@ -82,6 +85,10 @@ contract MetaPrompt is ERC721 {
 
     function isFrozen(uint id) public view returns (bool) {
         return frozen[id];
+    }
+
+    function getPromptList(address _address) public view returns (uint[] memory) {
+        return prompt_list[_address];
     }
 
     function createImage(uint[5] memory _prompts) public payable{
