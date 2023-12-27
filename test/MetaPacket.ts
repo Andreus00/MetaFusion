@@ -48,10 +48,7 @@ describe("MetafusionPresident", function () {
 
     async function deployMetafusionAndCreateCollection() {
       // Contracts are deployed using the first signer/account by default
-      const [owner, otherAccount] = await ethers.getSigners();
-  
-      const MetaFusionPresident = await ethers.getContractFactory("MetaFusionPresident");
-      const metaFusionPresident = await MetaFusionPresident.deploy();
+      const {metaFusionPresident, owner, otherAccount} = await deployMetafusionPresident();
 
       // Forge a collection
       await metaFusionPresident.forgeCollection(0);        // Forge a collection
@@ -66,15 +63,8 @@ describe("MetafusionPresident", function () {
     }
 
     async function deployMetafusionAndOpenPacket() {
-      // Contracts are deployed using the first signer/account by default
-      const [owner, otherAccount] = await ethers.getSigners();
-  
-      const MetaFusionPresident = await ethers.getContractFactory("MetaFusionPresident");
-      const metaFusionPresident = await MetaFusionPresident.deploy();
-
-      // Forge a collection
-      await metaFusionPresident.forgeCollection(0);        // Forge a collection
-
+      let { metaFusionPresident, owner, otherAccount } = await deployMetafusionAndCreateCollection();
+      
       // Forge a packet
       let etherAmount = { value: ethers.parseEther("1.0")}
       await metaFusionPresident.forgePacket(0, etherAmount)
@@ -94,6 +84,26 @@ describe("MetafusionPresident", function () {
       const mfp = await metaFusionPresident.connect(otherAccount);
       return { mfp, owner, otherAccount };
     }
+
+    async function OpenTwoPacketsWithDiffAccount() {
+      // init the contract, forge a collection and a packet, open the packet
+      const {metaFusionPresident, owner, otherAccount } = await deployMetafusionAndOpenPacket()
+
+      // switch account
+      const metaFusionPresidentOther = await metaFusionPresident.connect(otherAccount);
+
+      // forge a collection and a packet
+      let etherAmount = { value: ethers.parseEther("1.0")}
+      await metaFusionPresidentOther.forgePacket(0, etherAmount)
+
+      let collection = BigInt(0);
+      let idInCollection = BigInt(2);
+      let pkUUID = genPKUUID(collection, idInCollection);
+
+      // Open the packet
+      await metaFusionPresidentOther.openPacket(pkUUID)
+      return { metaFusionPresident, metaFusionPresidentOther, owner, otherAccount };
+    }    
     
   
     describe("ForgeCollection", function () {
@@ -257,7 +267,6 @@ describe("MetafusionPresident", function () {
 
         let promptList = await metaFusionPresident.getPromptsOwnebBy(owner.address);
 
-        console.log(promptList)
 
         let prompts = [0, 0, 0, 0, 0, 0];
         for (let i = 0; i < NUM_PROMPTS; i++) {
@@ -265,12 +274,62 @@ describe("MetafusionPresident", function () {
           let promptType = Number((promptId >> BigInt(13)) & BigInt(0x7));
           prompts[promptType] = Number(promptId);
         }
-        console.log(prompts)
-        await metaFusionPresident.createImage(prompts, { value: ethers.parseEther("0.1") })
+        
+        expect (await metaFusionPresident.createImage(prompts, { value: ethers.parseEther("0.1") })).to.emit(metaFusionPresident, "CreateImage");
 
         let cardsOwned = await metaFusionPresident.getCardsOwnedBy(owner.address);
         expect(cardsOwned.length).to.equal(1);
       })
+
+      it("Refuse to create an image", async function(){
+        const { mfp, owner, otherAccount } = await loadFixture(deployMetafusionAndOpenPacketThenSwitchAccount);
+        const NUM_PROMPTS = await mfp.PACKET_SIZE();
+
+        let promptList = await mfp.getPromptsOwnebBy(owner.address);
+
+
+        let prompts = [0, 0, 0, 0, 0, 0];
+        for (let i = 0; i < NUM_PROMPTS; i++) {
+          let promptId = promptList[i];
+          let promptType = Number((promptId >> BigInt(13)) & BigInt(0x7));
+          prompts[promptType] = Number(promptId);
+        }
+        
+        expect(mfp.createImage(prompts, { value: ethers.parseEther("0.1") })).to.be.revertedWith("Only the owner of the prompts can create an image!");
+      })
+
+      it("Generate two images", async function(){
+        const { metaFusionPresident, metaFusionPresidentOther, owner, otherAccount } = await loadFixture(OpenTwoPacketsWithDiffAccount);
+        const NUM_PROMPTS = await metaFusionPresident.PACKET_SIZE();
+
+        let promptListOwner = await metaFusionPresident.getPromptsOwnebBy(owner.address);
+        console.log(promptListOwner);
+        expect(promptListOwner.length).to.equal(NUM_PROMPTS);
+        let promptListOther = await metaFusionPresident.getPromptsOwnebBy(otherAccount.address);
+        console.log(promptListOther);
+        expect(promptListOther.length).to.equal(NUM_PROMPTS);
+
+        let packPrompts = function (promptList: bigint[]) {
+          let prompts = [0, 0, 0, 0, 0, 0];
+          for (let i = 0; i < NUM_PROMPTS; i++) {
+            let promptId = promptList[i];
+            let promptType = Number((promptId >> BigInt(13)) & BigInt(0x7));
+            prompts[promptType] = Number(promptId);
+          }
+          return prompts;
+        }
+        let checkPrompts = async function (mfp: any, prompts: number[], address: string) {
+          expect(await mfp.createImage(prompts, { value: ethers.parseEther("0.1") })).to.emit(metaFusionPresident, "CreateImage");
+          let cardsOwned = await mfp.getCardsOwnedBy(address);
+          expect(cardsOwned.length).to.equal(1);
+        }
+
+        let promptsOwner = packPrompts(promptListOwner);
+        let promptsOther = packPrompts(promptListOther);
+
+        await checkPrompts(metaFusionPresident, promptsOwner, owner.address);
+        await checkPrompts(metaFusionPresidentOther, promptsOther, otherAccount.address);
+      });
     });
   });
   
