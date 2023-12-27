@@ -31,8 +31,6 @@ contract MetaPrompt is ERC721 {
     address private minter;  // the oracle
     address private owner;  // the owner of the contract
 
-    uint256 private constant GENERATION_COST = 0.1 ether;  // The cost of generating an image
-
     uint32 public immutable NUM_PROMPT_TYPES;  // The number of different prompt types
     
     mapping (address => uint32[]) private prompt_list;  // TODO: remove this as it is only for debugging. 
@@ -72,7 +70,7 @@ contract MetaPrompt is ERC721 {
         prompt_list[to].push(id);
     }
 
-    function getPromptList(address _address) public view returns (uint32[] memory) {
+    function getPromptsOwnebBy(address _address) public view returns (uint32[] memory) {
         return prompt_list[_address];
     }
 
@@ -84,13 +82,12 @@ contract MetaPrompt is ERC721 {
         return uint8((promptId >> 13) & 0x7);
     }
 
-    function burnForImageGeneration(address promptOwner, uint32[] memory _prompts) public payable onlyOwner {
+    function burnForImageGeneration(address promptOwner, uint32[] memory _prompts) public onlyOwner {
         /**
          * This function first checks if all the requirements are met, then freezes
          * the prompts and finally calls the oracle to mint the image.
          */
         // first check if the ether sent is enough
-        require(msg.value >= GENERATION_COST, "Not enough ether sent!");
         // then check that the sender owns all the prompts
         
         uint8 invalidPrompts = 0;
@@ -101,6 +98,9 @@ contract MetaPrompt is ERC721 {
                 require(promptOwner == ownerOf(_prompts[i]), "Only the owner of the prompts can create an image!");
                 require(getCollectionId(_prompts[i]) == collectionId, "The prompts must belong to the same collection!");
                 require(getPromptType(_prompts[i]) == i, "The prompts must be of the correct type!");
+
+                // burn the prompt
+                _burn(_prompts[i]);
             }
             else {
                 invalidPrompts++;
@@ -108,10 +108,6 @@ contract MetaPrompt is ERC721 {
         }
         if (invalidPrompts == NUM_PROMPT_TYPES) {
             revert("No prompts used!");
-        }
-        // then freeze all the prompts
-        for (uint8 i = 0; i < NUM_PROMPT_TYPES; i++) {
-            _burn(_prompts[i]);
         }
     }
 }

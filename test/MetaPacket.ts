@@ -241,7 +241,7 @@ describe("MetafusionPresident", function () {
         const NUM_PROMPTS = await metaFusionPresident.PACKET_SIZE();
         
         // check if all the prompts have been added to the account
-        let promptList = await metaFusionPresident.getPromptList(owner.address);
+        let promptList = await metaFusionPresident.getPromptsOwnebBy(owner.address);
         // check that the list contains 6 unique prompts
         expect(promptList.length).to.equal(NUM_PROMPTS);
         expect(new Set(promptList).size).to.equal(NUM_PROMPTS);
@@ -249,6 +249,28 @@ describe("MetafusionPresident", function () {
 
       it("Check ", function(){}
       )
+    });
+    describe("Image", function () {
+      it("Create an image", async function(){
+        const { metaFusionPresident, owner, otherAccount } = await loadFixture(deployMetafusionAndOpenPacket);
+        const NUM_PROMPTS = await metaFusionPresident.PACKET_SIZE();
+
+        let promptList = await metaFusionPresident.getPromptsOwnebBy(owner.address);
+
+        console.log(promptList)
+
+        let prompts = [0, 0, 0, 0, 0, 0];
+        for (let i = 0; i < NUM_PROMPTS; i++) {
+          let promptId = promptList[i];
+          let promptType = Number((promptId >> BigInt(13)) & BigInt(0x7));
+          prompts[promptType] = Number(promptId);
+        }
+        console.log(prompts)
+        await metaFusionPresident.createImage(prompts, { value: ethers.parseEther("0.1") })
+
+        let cardsOwned = await metaFusionPresident.getCardsOwnedBy(owner.address);
+        expect(cardsOwned.length).to.equal(1);
+      })
     });
   });
   

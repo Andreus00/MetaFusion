@@ -47,6 +47,13 @@ contract MetaCard is ERC721 {
     
     string public baseURI = "https://metafusion.io/api/card/";  // The base URI for the metadata of the cards
 
+    mapping (address => uint256[]) private card_list;  // The list of cards owned by an address. Everyone can read this.
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, "You're not the owner!");
+        _;
+    }
+
 	modifier onlyMinter() {
         require(msg.sender == minter, "You're not the minter!");
         _;
@@ -57,7 +64,11 @@ contract MetaCard is ERC721 {
         owner = msg.sender;    // The owner of the contract is the one who deployed it
     }
 
-    function destroyCard(uint256 imageId) payable public {
+    function getCardsOwnedBy(address _address) public view returns (uint256[] memory) {
+        return card_list[_address];
+    }
+
+    function destroyCard(uint256 imageId) payable public onlyOwner{
         _burn(imageId);
     }
 
@@ -71,6 +82,7 @@ contract MetaCard is ERC721 {
         // metadata[id].seed = _seed;
         // metadata[id].prompts = _prompts;
         // metadata[id].is_finalized = false;
+        card_list[to].push(cardPrompts);
         return cardPrompts;
     }
 }

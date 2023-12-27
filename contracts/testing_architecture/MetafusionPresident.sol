@@ -22,6 +22,7 @@ contract MetaFusionPresident {
 
     uint8 public constant NUM_PROMPT_TYPES = 6;  // The number of different prompt types
     uint8 public constant PACKET_SIZE = 8;  // The number of different prompt types
+    uint256 private constant GENERATION_COST = 0.1 ether;  // The cost of generating an image
 
     event PacketForged(address indexed blacksmith, uint32 packetUUid);
     event PacketOpened(address indexed opener, uint32[] prompts);
@@ -106,19 +107,24 @@ contract MetaFusionPresident {
         emit PacketOpened(msg.sender, prompts);
     }
 
-    function getPromptList(address _address) public view returns (uint32[] memory) {
-        return metaPrompt.getPromptList(_address);
+    function getPromptsOwnebBy(address _address) public view returns (uint32[] memory) {
+        return metaPrompt.getPromptsOwnebBy(_address);
     }
 
-    function mergePrompts(uint8[NUM_PROMPT_TYPES] memory prompts) public pure returns (uint256) {
+    function getCardsOwnedBy(address _address) public view returns (uint256[] memory) {
+        return metaCard.getCardsOwnedBy(_address);
+    }
+
+    function mergePrompts(uint32[NUM_PROMPT_TYPES] memory prompts) private pure returns (uint256) {
         uint256 merged = 0;
         for (uint8 i = 0; i < NUM_PROMPT_TYPES; i++)
             merged = (merged << 32) | uint256(prompts[i]);
         return merged;
     }
 
-    function createImage(uint8[NUM_PROMPT_TYPES] memory prompts) public payable {
+    function createImage(uint32[NUM_PROMPT_TYPES] memory prompts) public payable {
         require(prompts.length == NUM_PROMPT_TYPES, string(abi.encodePacked("You shall pass the exact number of prompts: ", NUM_PROMPT_TYPES)));
+        require(msg.value >= GENERATION_COST, "Not enough ether sent!");
         uint32[] memory prompts_array = new uint32[](NUM_PROMPT_TYPES);
         for (uint32 i = 0; i < NUM_PROMPT_TYPES; i++) {
             uint32 prompt_id = prompts[i];
