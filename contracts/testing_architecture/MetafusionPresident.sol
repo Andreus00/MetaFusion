@@ -79,7 +79,7 @@ contract MetaFusionPresident {
         emit PacketForged(msg.sender, packetUUid);
     }
 
-    function getPromptId(uint32 packetID, uint8 promptIndex, uint8 promptType) public pure returns (uint32) {
+    function _getPromptId(uint32 packetID, uint8 promptIndex, uint8 promptType) private pure returns (uint32) {
         uint32 shiftedPromptIndex = uint32(promptIndex) << (16 + 13);
         uint32 shiftedPromptType = uint32(promptType) << 13;
         return shiftedPromptIndex | shiftedPromptType | packetID;  // safe until we use less than 8192 packets per collection and less then 8192 collections
@@ -96,7 +96,7 @@ contract MetaFusionPresident {
             uint256 idhash = uint256(keccak256(abi.encodePacked(packetID, i, block.timestamp)));
             uint8 prompt_type = uint8(idhash % NUM_PROMPT_TYPES);
 
-            uint32 promptId = getPromptId(packetID, i, prompt_type); // embedding informations
+            uint32 promptId = _getPromptId(packetID, i, prompt_type); // embedding informations
 
             // get the prompt type from the hash
 
@@ -115,14 +115,14 @@ contract MetaFusionPresident {
         return metaCard.getCardsOwnedBy(_address);
     }
 
-    function mergePrompts(uint32[NUM_PROMPT_TYPES] memory prompts) private pure returns (uint256) {
+    function _mergePrompts(uint32[NUM_PROMPT_TYPES] memory prompts) private pure returns (uint256) {
         uint256 merged = 0;
         for (uint8 i = 0; i < NUM_PROMPT_TYPES; i++)
             merged = (merged << 32) | uint256(prompts[i]);
         return merged;
     }
 
-    function createImage(uint32[NUM_PROMPT_TYPES] memory prompts) public payable {
+    function createImage(uint32[NUM_PROMPT_TYPES] memory prompts) public payable returns (uint256){
         require(prompts.length == NUM_PROMPT_TYPES, string(abi.encodePacked("You shall pass the exact number of prompts: ", NUM_PROMPT_TYPES)));
         require(msg.value >= GENERATION_COST, "Not enough ether sent!");
         uint32[] memory prompts_array = new uint32[](NUM_PROMPT_TYPES);
@@ -133,10 +133,12 @@ contract MetaFusionPresident {
         metaPrompt.burnForImageGeneration(msg.sender, prompts_array);
 
         // mint the card
-        uint256 mergedPrompts = mergePrompts(prompts);
+        uint256 mergedPrompts = _mergePrompts(prompts);
         uint256 cardId = metaCard.mint(msg.sender, mergedPrompts);
 
         emit CreateImage(msg.sender, cardId);
+
+        return cardId;
     }
 
     function burnImageAndRecoverPrompts(uint256 imageId) public payable {

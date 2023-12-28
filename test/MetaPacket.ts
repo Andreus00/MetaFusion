@@ -85,6 +85,27 @@ describe("MetafusionPresident", function () {
       return { mfp, owner, otherAccount };
     }
 
+    async function deployMetafusionAndGenerateImage() {
+      const {metaFusionPresident, owner, otherAccount } = await deployMetafusionAndOpenPacket()
+      const NUM_PROMPTS = await metaFusionPresident.PACKET_SIZE();
+
+      let promptList = await metaFusionPresident.getPromptsOwnebBy(owner.address);
+
+      let prompts = [0, 0, 0, 0, 0, 0];
+      for (let i = 0; i < NUM_PROMPTS; i++) {
+        let promptId = promptList[i];
+        let promptType = Number((promptId >> BigInt(13)) & BigInt(0x7));
+        prompts[promptType] = Number(promptId);
+      }
+
+      const tx = await metaFusionPresident.createImage(prompts, { value: ethers.parseEther("0.1") });
+      const receipt = await tx.wait();
+      const log = receipt?.logs[receipt?.logs.length - 1];
+      let data = log?.topics[1];
+      const imageId = data;
+      return { metaFusionPresident, owner, otherAccount, imageId };
+    }
+
     async function OpenTwoPacketsWithDiffAccount() {
       // init the contract, forge a collection and a packet, open the packet
       const {metaFusionPresident, owner, otherAccount } = await deployMetafusionAndOpenPacket()
@@ -303,10 +324,8 @@ describe("MetafusionPresident", function () {
         const NUM_PROMPTS = await metaFusionPresident.PACKET_SIZE();
 
         let promptListOwner = await metaFusionPresident.getPromptsOwnebBy(owner.address);
-        console.log(promptListOwner);
         expect(promptListOwner.length).to.equal(NUM_PROMPTS);
         let promptListOther = await metaFusionPresident.getPromptsOwnebBy(otherAccount.address);
-        console.log(promptListOther);
         expect(promptListOther.length).to.equal(NUM_PROMPTS);
 
         let packPrompts = function (promptList: bigint[]) {
@@ -329,6 +348,14 @@ describe("MetafusionPresident", function () {
 
         await checkPrompts(metaFusionPresident, promptsOwner, owner.address);
         await checkPrompts(metaFusionPresidentOther, promptsOther, otherAccount.address);
+      });
+
+      it("Destroy an image", async function(){
+        const { metaFusionPresident, owner, otherAccount, imageId } = await loadFixture(deployMetafusionAndGenerateImage);
+        console.log("imageId", imageId);
+        console.log("logged_account", await metaFusionPresident.getAddress());
+        console.log("owner", owner.address);
+        expect(await metaFusionPresident.burnImageAndRecoverPrompts(imageId)).to.not.be.reverted;
       });
     });
   });
