@@ -106,12 +106,11 @@ describe("MetafusionPresident", function () {
         let promptType = Number((promptId >> BigInt(13)) & BigInt(0x7));
         prompts[promptType] = Number(promptId);
       }
-      console.log(prompts)
       const tx = await metaFusionPresident.createImage(prompts, { value: ethers.parseEther("0.1") });
       const receipt = await tx.wait();
       const log = receipt?.logs[receipt?.logs.length - 1];
       let data = log?.topics[1];
-      const imageId = mergePrompts(prompts);
+      let imageId = (await metaFusionPresident.getCardsOwnedBy(owner.address))[0];
       return { metaFusionPresident, owner, otherAccount, imageId };
     }
 
@@ -308,7 +307,6 @@ describe("MetafusionPresident", function () {
         await expect (metaFusionPresident.createImage(prompts, { value: ethers.parseEther("0.1") })).to.emit(metaFusionPresident, "CreateImage");
 
         let cardsOwned = await metaFusionPresident.getCardsOwnedBy(owner.address);
-        console.log(cardsOwned)
         expect(cardsOwned.length).to.equal(1);
       })
 
@@ -364,12 +362,9 @@ describe("MetafusionPresident", function () {
         const { metaFusionPresident, owner, otherAccount, imageId } = await loadFixture(deployMetafusionAndGenerateImage);
         
         console.log("imageId", imageId, typeof(imageId));
-        console.log("images owned: ", await metaFusionPresident.getCardsOwnedBy(owner.address))
-        let cards = await metaFusionPresident.getCardsOwnedBy(owner.address)
         console.log("logged_account", await metaFusionPresident.getAddress());
         console.log("owner", owner.address);
-        let res = await expect(await metaFusionPresident.burnImageAndRecoverPrompts(imageId));
-        console.log(res)
+        await expect(metaFusionPresident.burnImageAndRecoverPrompts(imageId)).to.not.be.reverted;
       });
     });
   });
