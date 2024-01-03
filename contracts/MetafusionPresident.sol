@@ -142,12 +142,12 @@ contract MetaFusionPresident {
     }
 
     function burnImageAndRecoverPrompts(uint256 imageId) public payable {
+        require(metaCard.isCardOwnedBy(msg.sender, imageId), "You are not the image owwwner");
         for(uint8 i = 0; i < NUM_PROMPT_TYPES; i++){
-            imageId >>= 32;
+            imageId = imageId >> 32;
             uint32 currentPromptId = uint32(imageId & 0xffffffff);
             metaPrompt.mint(msg.sender, currentPromptId);
         }
-        
-        metaCard.destroyCard(imageId);
+        metaCard.destroyCard(imageId);       
     }
 }

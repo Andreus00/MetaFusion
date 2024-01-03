@@ -68,6 +68,22 @@ contract MetaCard is ERC721 {
         return card_list[_address];
     }
 
+    /**
+     * This function verify the owner identity and ensure that all prompts are legits
+     */
+    function isCardOwnedBy(address _address, uint256 cardId) public view returns (bool) {
+        uint256[] memory cards = card_list[_address];
+        bool isOwned = false;
+        for(uint256 i = 0; i < cards.length; i++){
+            uint256 card = cards[i];
+            isOwned = card == cardId;
+            if(isOwned){
+                break;
+            }
+        }
+        return isOwned;
+    }
+
     function destroyCard(uint256 imageId) payable public onlyOwner{
         _burn(imageId);
     }
