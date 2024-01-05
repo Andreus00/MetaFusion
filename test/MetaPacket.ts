@@ -111,7 +111,9 @@ describe("MetafusionPresident", function () {
       const log = receipt?.logs[receipt?.logs.length - 1];
       let data = log?.topics[1];
       let imageId = (await metaFusionPresident.getCardsOwnedBy(owner.address))[0];
-      return { metaFusionPresident, owner, otherAccount, imageId };
+      const usedPrompts = prompts;
+
+      return { metaFusionPresident, owner, otherAccount, imageId, usedPrompts, promptList };
     }
 
     async function OpenTwoPacketsWithDiffAccount() {
@@ -308,7 +310,43 @@ describe("MetafusionPresident", function () {
 
         let cardsOwned = await metaFusionPresident.getCardsOwnedBy(owner.address);
         expect(cardsOwned.length).to.equal(1);
-      })
+
+        // check that prompts are correctly removed
+        let updatedPromptList = await metaFusionPresident.getPromptsOwnebBy(owner.address);
+        let usedPrompts = 0;
+        // count non zeroes values
+        for (let i = 0; i < prompts.length; i++) {
+          if (prompts[i] !== 0) {
+            usedPrompts++;
+          }
+        }
+        // check length consistency
+        // console.log("used", prompts, "updated", updatedPromptList,"full list", promptList , "used prompts", usedPrompts);
+        // check if the length of the updated prompt list is equal to the length of the old prompt list and the prompt list
+        expect(updatedPromptList.length).to.be.equal(promptList.length - usedPrompts);
+        // check values consistency
+        for(let i = 0; i < prompts.length; i++){
+          if(prompts[i] !== 0){
+            // check that used prompt is not in user prompts list
+            expect(updatedPromptList.includes(BigInt(prompts[i]))).to.be.false
+          }
+        }
+        // check that every unused prompts are in the user's prompts lists
+        // remove all prompts used for image minting
+        let expectedPromptList = promptList.filter(n => !prompts.includes(Number(n)));
+        // just sort things for make same arrays in same order
+        // Ensure the arrays are mutable
+        expectedPromptList = [...expectedPromptList];
+        updatedPromptList = [...updatedPromptList];
+        expectedPromptList.sort();
+        updatedPromptList.sort();
+        // compare element to element way...
+        expect(expectedPromptList.length == updatedPromptList.length);
+        for(let i = 0; i < expectedPromptList.length; i++){
+          expect(expectedPromptList[i] == updatedPromptList[i]).to.be.true;
+        }
+      }
+      )
 
       it("Refuse to create an image", async function(){
         const { mfp, owner, otherAccount } = await loadFixture(deployMetafusionAndOpenPacketThenSwitchAccount);
@@ -346,7 +384,7 @@ describe("MetafusionPresident", function () {
           return prompts;
         }
         let checkPrompts = async function (mfp: any, prompts: number[], address: string) {
-          expect(await mfp.createImage(prompts, { value: ethers.parseEther("0.1") })).to.emit(metaFusionPresident, "CreateImage");
+          await expect(mfp.createImage(prompts, { value: ethers.parseEther("0.1") })).to.emit(metaFusionPresident, "CreateImage");
           let cardsOwned = await mfp.getCardsOwnedBy(address);
           expect(cardsOwned.length).to.equal(1);
         }
@@ -359,12 +397,24 @@ describe("MetafusionPresident", function () {
       });
 
       it("Destroy an image", async function(){
-        const { metaFusionPresident, owner, otherAccount, imageId } = await loadFixture(deployMetafusionAndGenerateImage);
+        const { metaFusionPresident, owner, otherAccount, imageId, usedPrompts, promptList } = await loadFixture(deployMetafusionAndGenerateImage);
         
         console.log("imageId", imageId, typeof(imageId));
         console.log("logged_account", await metaFusionPresident.getAddress());
         console.log("owner", owner.address);
-        await expect(metaFusionPresident.burnImageAndRecoverPrompts(imageId)).to.not.be.reverted;
+        
+        let tx = await metaFusionPresident.burnImageAndRecoverPrompts(imageId, { value: ethers.parseEther("0.1") });
+        
+        await expect(metaFusionPresident.burnImageAndRecoverPrompts(imageId, { value: ethers.parseEther("0.1") })).to.be.reverted;
+
+        // check that user have the same amount of initial prompts
+
+
+        // check user have zero images
+
+
+
+        
       });
     });
   });

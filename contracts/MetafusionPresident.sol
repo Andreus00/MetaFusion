@@ -135,7 +135,9 @@ contract MetaFusionPresident {
         // mint the card
         uint256 mergedPrompts = _mergePrompts(prompts);
         uint256 cardId = metaCard.mint(msg.sender, mergedPrompts);
-
+        // remove the prompts from the user's list
+        metaPrompt.removePromts(prompts_array, msg.sender);
+        // emit event
         emit CreateImage(msg.sender, cardId);
 
         return cardId;

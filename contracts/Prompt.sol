@@ -82,6 +82,37 @@ contract MetaPrompt is ERC721 {
         return uint8((promptId >> 13) & 0x7);
     }
 
+    function removeElementFromArray(uint256 index, address caller) private{
+        prompt_list[caller][index] = prompt_list[caller][prompt_list[caller].length - 1];
+        prompt_list[caller].pop();
+    }
+
+    function removePromts(uint32[] memory prompts, address caller) public onlyOwner{
+        uint8 elementsToRemove = 0;
+        // count elements != 0
+        for(uint8 i = 0; i < prompts.length; i++){
+            elementsToRemove += prompts[i] != 0? 1: 0;
+        }
+        uint256 i = 0;
+        while (elementsToRemove >= 1){
+            bool isInList = false;
+            // check if prompt is in list
+            for(uint8 promptIndex = 0; promptIndex < prompts.length; promptIndex ++){
+                isInList = prompt_list[caller][i] == prompts[promptIndex];
+                if(isInList){
+                    break;
+                }
+            }
+            if(isInList){
+                removeElementFromArray(i, caller);
+                elementsToRemove --;
+                continue;
+            }
+            i++;
+        }
+        // this is a fast workaround, since it suffer from 
+    }
+
     function burnForImageGeneration(address promptOwner, uint32[] memory _prompts) public onlyOwner {
         /**
          * This function first checks if all the requirements are met, then freezes
