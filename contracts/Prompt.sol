@@ -131,9 +131,6 @@ contract MetaPrompt is ERC721 {
                 require(promptOwner == ownerOf(_prompts[i]), "Only the owner of the prompts can create an image!");
                 require(getCollectionId(_prompts[i]) == collectionId, "The prompts must belong to the same collection!");
                 require(getPromptType(_prompts[i]) == i, "The prompts must be of the correct type!");
-
-                // burn the prompt
-                _burn(_prompts[i]);
             }
             else {
                 invalidPrompts++;
@@ -142,5 +139,8 @@ contract MetaPrompt is ERC721 {
         if (invalidPrompts == NUM_PROMPT_TYPES) {
             revert("No prompts used!");
         }
+        for (uint8 i = 0; i < NUM_PROMPT_TYPES; i++) {
+                _burn(_prompts[i]);
+    	}	
     }
 }
