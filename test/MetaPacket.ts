@@ -111,7 +111,7 @@ describe("MetafusionPresident", function () {
       const log = receipt?.logs[receipt?.logs.length - 1];
       let data = log?.topics[1];
       let imageId = (await metaFusionPresident.getCardsOwnedBy(owner.address))[0];
-      const usedPrompts = prompts;
+      const usedPrompts = prompts.filter(n => n!=0);
 
       return { metaFusionPresident, owner, otherAccount, imageId, usedPrompts, promptList };
     }
@@ -403,18 +403,35 @@ describe("MetafusionPresident", function () {
         console.log("logged_account", await metaFusionPresident.getAddress());
         console.log("owner", owner.address);
         
+        
+        // check that new pompt list do not correspond to the previous one
+        // Use await to resolve the promise
+        const actualPrompts = await metaFusionPresident.getPromptsOwnebBy(owner.address);
+
+        // Use .members to check if the arrays have the same elements (order-independent)
+        expect(actualPrompts).to.have.not.members(usedPrompts);
+
         let tx = await metaFusionPresident.burnImageAndRecoverPrompts(imageId, { value: ethers.parseEther("0.1") });
+        const receipt = await tx.wait();
         
-        await expect(metaFusionPresident.burnImageAndRecoverPrompts(imageId, { value: ethers.parseEther("0.1") })).to.be.reverted;
+        // Use await to resolve the promise
+        const cardsOwned = await metaFusionPresident.getCardsOwnedBy(owner.address);
 
-        // check that user have the same amount of initial prompts
+        // Use .equal to check if the resolved value is 0
+        expect(cardsOwned.length).to.be.equal(0);
+                
+        // check that new pompt list correspond to the previous one
+        // Use await to resolve the promise
+        const newActualPrompts = await metaFusionPresident.getPromptsOwnebBy(owner.address);
 
-
-        // check user have zero images
-
-
-
+        // Use .members to check if the arrays have the same elements (order-independent)
+        console.log("old prompts", promptList, "new prompts", newActualPrompts);
+        expect(newActualPrompts.length).to.be.equal(8);  
         
+        let _newActualPrompts = newActualPrompts.map(value => BigInt(value));
+        let _promptList = promptList.map(value => BigInt(value));
+        expect(_newActualPrompts).to.have.members(_promptList);  
+             
       });
     });
   });

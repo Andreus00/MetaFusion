@@ -86,6 +86,18 @@ contract MetaCard is ERC721 {
 
     function destroyCard(uint256 imageId) payable public onlyOwner{
         _burn(imageId);
+        // delete image from list
+    }
+
+    function deleteCard(uint256 card, address caller) public onlyOwner{
+        uint256[]memory cardList = card_list[caller];
+        for(uint256 index = 0; index < cardList.length; index++){
+            if (cardList[index] == card){
+                card_list[caller][index] = card_list[caller][cardList.length - 1];
+                card_list[caller].pop();
+                break;
+            }
+        }
     }
 
     function mint(address to, uint256 cardPrompts) public onlyMinter returns(uint256) {

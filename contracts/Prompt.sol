@@ -65,7 +65,7 @@ contract MetaPrompt is ERC721 {
      * @param id The hash of the prompt (keccak256(prompt + "series number"))
      */
     function mint(address to, uint32 id) public onlyMinter {
-        // The oracle is the only one who can mint new prompts.s
+        // The oracle is the only one who can mint new prompts.
         _safeMint(to, uint256(id));
         prompt_list[to].push(id);
     }
@@ -90,8 +90,10 @@ contract MetaPrompt is ERC721 {
     function removePromts(uint32[] memory prompts, address caller) public onlyOwner{
         uint8 elementsToRemove = 0;
         // count elements != 0
-        for(uint8 i = 0; i < prompts.length; i++){
-            elementsToRemove += prompts[i] != 0? 1: 0;
+        for(uint8 ii = 0; ii < prompts.length; ii++){
+            if(prompts[ii] != 0){
+                elementsToRemove += 1;
+            }
         }
         uint256 i = 0;
         while (elementsToRemove >= 1){
@@ -106,7 +108,7 @@ contract MetaPrompt is ERC721 {
             if(isInList){
                 removeElementFromArray(i, caller);
                 elementsToRemove --;
-                continue;
+                continue;  // do not update i
             }
             i++;
         }
