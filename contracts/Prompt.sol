@@ -140,7 +140,9 @@ contract MetaPrompt is ERC721 {
             revert("No prompts used!");
         }
         for (uint8 i = 0; i < NUM_PROMPT_TYPES; i++) {
-                _burn(_prompts[i]);
+		if (_prompts[i] != 0){
+                	_burn(_prompts[i]);
+		}
     	}	
     }
 }
