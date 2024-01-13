@@ -1,0 +1,41 @@
+[2024-01-13 18:21:07,535][__main__][INFO] - IPFS API is working, hash: <ipfshttpclient2.client.base.ResponseBase: {'Name': 'gattino.txt', 'Hash': 'QmeWEMWZfsSRYF427FPwcprrkLydQi5JNxthHHRGjt638e', 'Size': '16'}>
+[2024-01-13 18:21:32,408][__main__][INFO] - IPFS API is working, hash: QmeWEMWZfsSRYF427FPwcprrkLydQi5JNxthHHRGjt638e
+[2024-01-13 18:21:32,409][__main__][INFO] - IPFS API is working, data: None
+[2024-01-13 18:21:32,411][__main__][INFO] - IPFS ID: 12D3KooWD19uqk4Vf6wZW3Tec1Cy8nqpN91MxUdwkXoLnXz1MQHV
+[2024-01-13 18:21:32,412][__main__][INFO] - Provider instantiated.
+[2024-01-13 18:21:32,415][__main__][INFO] - Connection test: True
+[2024-01-13 18:21:32,415][__main__][INFO] - Current working directory: /home/andrea/Documenti/Computer Science/Blockchain/project/MetaFusion
+[2024-01-13 18:21:39,382][__main__][INFO] - IPFS API is working, hash: QmeWEMWZfsSRYF427FPwcprrkLydQi5JNxthHHRGjt638e
+[2024-01-13 18:21:39,384][__main__][INFO] - IPFS API is working, data: None
+[2024-01-13 18:21:39,386][__main__][INFO] - IPFS ID: 12D3KooWD19uqk4Vf6wZW3Tec1Cy8nqpN91MxUdwkXoLnXz1MQHV
+[2024-01-13 18:21:39,387][__main__][INFO] - Provider instantiated.
+[2024-01-13 18:21:39,390][__main__][INFO] - Connection test: True
+[2024-01-13 18:21:39,390][__main__][INFO] - Current working directory: /home/andrea/Documenti/Computer Science/Blockchain/project/MetaFusion
+[2024-01-13 18:21:44,383][__main__][INFO] - IPFS API is working, hash: QmeWEMWZfsSRYF427FPwcprrkLydQi5JNxthHHRGjt638e
+[2024-01-13 18:21:44,385][__main__][INFO] - IPFS API is working, data: None
+[2024-01-13 18:21:44,387][__main__][INFO] - IPFS ID: 12D3KooWD19uqk4Vf6wZW3Tec1Cy8nqpN91MxUdwkXoLnXz1MQHV
+[2024-01-13 18:21:44,388][__main__][INFO] - Provider instantiated.
+[2024-01-13 18:21:44,391][__main__][INFO] - Connection test: True
+[2024-01-13 18:21:44,391][__main__][INFO] - Current working directory: /home/andrea/Documenti/Computer Science/Blockchain/project/MetaFusion
+[2024-01-13 18:21:45,417][__main__][INFO] - Events found: 0
+[2024-01-13 18:21:46,428][__main__][INFO] - Events found: 0
+[2024-01-13 18:21:47,438][__main__][INFO] - Events found: 0
+[2024-01-13 18:21:48,453][__main__][INFO] - Events found: 0
+[2024-01-13 18:21:49,468][__main__][INFO] - Events found: 0
+[2024-01-13 18:21:50,479][__main__][INFO] - Events found: 0
+[2024-01-13 18:21:51,489][__main__][INFO] - Events found: 0
+[2024-01-13 18:21:52,501][__main__][INFO] - Events found: 0
+[2024-01-13 18:21:56,265][__main__][INFO] - IPFS API is working, hash: QmeWEMWZfsSRYF427FPwcprrkLydQi5JNxthHHRGjt638e
+[2024-01-13 18:21:56,267][__main__][INFO] - IPFS API is working, data: None
+[2024-01-13 18:21:56,269][__main__][INFO] - IPFS ID: 12D3KooWD19uqk4Vf6wZW3Tec1Cy8nqpN91MxUdwkXoLnXz1MQHV
+[2024-01-13 18:21:56,270][__main__][INFO] - Provider instantiated.
+[2024-01-13 18:21:56,275][__main__][INFO] - Connection test: True
+[2024-01-13 18:21:56,275][__main__][INFO] - Current working directory: /home/andrea/Documenti/Computer Science/Blockchain/project/MetaFusion
+[2024-01-13 18:21:57,302][__main__][INFO] - Events found: 0
+[2024-01-13 18:22:18,074][__main__][INFO] - IPFS API is working, hash: QmWhEKScDyscbRn3eQGh2B4yGbqqeNMZsCw7zDZzSUTaST
+[2024-01-13 18:22:18,076][__main__][INFO] - IPFS API is working, data: None
+[2024-01-13 18:22:18,078][__main__][INFO] - IPFS ID: 12D3KooWD19uqk4Vf6wZW3Tec1Cy8nqpN91MxUdwkXoLnXz1MQHV
+[2024-01-13 18:22:18,080][__main__][INFO] - Provider instantiated.
+[2024-01-13 18:22:18,083][__main__][INFO] - Connection test: True
+[2024-01-13 18:22:18,083][__main__][INFO] - Current working directory: /home/andrea/Documenti/Computer Science/Blockchain/project/MetaFusion
+[2024-01-13 18:22:19,109][__main__][INFO] - Events found: 0

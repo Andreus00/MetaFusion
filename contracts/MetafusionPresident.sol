@@ -18,23 +18,44 @@ contract MetaFusionPresident {
 
     uint constant packetCost = 0.1 ether;
 
-    string public baseURI = "https://metafusion.io/api/";  // The base URI for the metadata of the cards
+    string public baseURI = "https://metafusion.io/api/";  // The base URI for the metadata of packets, prompts and cards
 
     uint8 public constant NUM_PROMPT_TYPES = 6;  // The number of different prompt types
     uint8 public constant PACKET_SIZE = 8;  // The number of different prompt types
     uint256 private constant GENERATION_COST = 0.1 ether;  // The cost of generating an image
 
-    event PacketForged(address indexed blacksmith, uint32 packetUUid);
+    event PacketForged(address indexed blacksmith, uint32 packetId);
     event PacketOpened(address indexed opener, uint32[] prompts);
     event CreateImage(address indexed creator, uint256 prompts);
+    event WillToBuyPacket(address buyer, address seller, uint256 id, uint256 value);
+    event WillToBuyPrompt(address buyer, address seller, uint256 id, uint256 value);
+    event WillToBuyImage(address buyer, address seller, uint256 id, uint256 value);
+    event PromptTransfered(address indexed buyer, address indexed seller, uint256 id);
+    event PacketTransfered(address indexed buyer, address indexed seller, uint256 id);
+    event CardTransfered(address indexed buyer, address indexed seller, uint256 id);
     
     modifier onlyOwner() {
-        require(msg.sender == owner, "Only the owner of the contract can forge new collections!");
+        require(msg.sender == owner, "Only the owner of the contract can perform this action!");
         _;
     }
 
     modifier checkPacketCost() {
         require(msg.value >= packetCost, "You didn't send enought ethers!");
+        _;
+    }
+
+    modifier isPacketListed(uint32 packetId) {
+        require(metaPacket.getApproved(packetId) == address(this), "The packet is not listed!");
+        _;
+    }
+
+    modifier isPromptListed(uint32 promptId) {
+        require(metaPrompt.getApproved(promptId) == address(this), "The prompt is not listed!");
+        _;
+    }
+
+    modifier isCardListed(uint256 cardId) {
+        require(metaCard.getApproved(cardId) == address(this), "The card is not listed!");
         _;
     }
 
@@ -156,5 +177,102 @@ contract MetaFusionPresident {
             }
             imageId = imageId >> 32;
         }
+    }
+
+    /**
+     * This function can be called by users to express their will to buy a packet.
+     * They have to send an amount of ethers. An oracle will check if the amount is enough
+     * and, if so, it will call the 'transferPacket' function.
+     * @param packetId the id of the packet to buy
+     */
+    function buyPacket(uint32 packetId) public payable isPacketListed(packetId) {
+        // this function registers the will of the buyer to buy a listed packet
+        address seller = metaPacket.ownerOf(packetId);
+        emit WillToBuyPacket(msg.sender, seller, packetId, msg.value);
+    }
+
+    /**
+     * This function can be called by users to express their will to buy a prompt.
+     * They have to send an amount of ethers. An oracle will check if the amount is enough
+     * and, if so, it will call the 'transferPrompt' function.
+     * @param promptId the id of the prompt to buy
+     */
+    function buyPrompt(uint32 promptId) public payable isPromptListed(promptId) {
+        // this function registers the will of the buyer to buy a listed prompt
+        address seller = metaPrompt.ownerOf(promptId);
+        emit WillToBuyPrompt(msg.sender, seller, promptId, msg.value);
+    }
+
+    /**
+     * This function can be called by users to express their will to buy a card.
+     * They have to send an amount of ethers. An oracle will check if the amount is enough
+     * and, if so, it will call the 'transferCard' function.
+     * @param cardId the id of the card to buy
+     */
+    function buyCard(uint256 cardId) public payable isCardListed(cardId) {
+        // this function registers the will of the buyer to buy a listed card
+        address seller = metaCard.ownerOf(cardId);
+        emit WillToBuyImage(msg.sender, seller, cardId, msg.value);
+    }
+
+    /**
+     * This function allows the contract to send ether to an address.
+     * This is used to send ethers to the seller when a packet is sold.
+     * @param _to the address to send the ether to
+     * @param value the amount of ether to send
+     */
+    function _payAddress(address _to, uint256 value) private {
+        (bool sent, bytes memory data) = _to.call{value: value}("");
+        require(sent, "Failed to send Ether");
+    }
+
+
+    /**
+     * This function allows the owner to transfer a packet to a buyer and 
+     * @param buyer the buyer
+     * @param seller the seller
+     * @param packetId the image to transfer
+     * @param val the amount of ether to send to the seller
+     */
+    function transferPacket(address buyer, address seller, uint32 packetId, uint256 val) public isPacketListed(packetId) onlyOwner {
+        _payAddress(seller, val);
+        metaPacket.transferFrom(seller, buyer, packetId);
+        emit PacketTransfered(buyer, seller, packetId);
+    }
+
+    /**
+     * This function allows the owner to transfer a prompt to a buyer and send ethers to the seller.
+     * @param buyer the buyer
+     * @param seller the seller
+     * @param promptId the prompt to transfer
+     * @param val the amount of ether to send to the seller
+     */
+    function transferPrompt(address buyer, address seller, uint32 promptId, uint256 val) public isPromptListed(promptId) onlyOwner {
+        _payAddress(seller, val);
+        metaPrompt.transferFrom(seller, buyer, promptId);
+        emit PromptTransfered(buyer, seller, promptId);
+    }
+
+    /**
+     * This function allows the owner to transfer a card to a buyer and send ethers to the seller.
+     * @param buyer the buyer
+     * @param seller the seller
+     * @param imageId the image to transfer
+     * @param val the amount of ether to send to the seller
+     */
+    function transferCard(address buyer, address seller, uint32 imageId, uint256 val) public isCardListed(imageId) onlyOwner {
+        _payAddress(seller, val);
+        metaCard.transferFrom(seller, buyer, imageId);
+        emit CardTransfered(buyer, seller, imageId);
+    }
+
+
+    /**
+     * If the buyer doesn't send enough ether, the owner can refund him.
+     * @param buyer the address that will receive the refund
+     * @param value the amount of ether to send
+     */
+    function refund(address buyer, uint256 value) public onlyOwner {
+        _payAddress(buyer, value);
     }
 }

@@ -1,0 +1,6 @@
+web3
+transformers
+diffusers
+numpy
+IPFS-Toolkit
+hydra-core

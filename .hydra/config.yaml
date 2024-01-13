@@ -1,0 +1,12 @@
+address: ''
+private_key: ''
+poll_interval: 1
+provider:
+  _target_: web3.Web3
+  provider:
+    _target_: web3.Web3.HTTPProvider
+    endpoint_uri: http://127.0.0.1:8545
+contract:
+  contract_address: MetaFusionPresident
+ipfs:
+  peer: /ip4/0.0.0.0/tcp/5001

@@ -72,6 +72,11 @@ contract MetaPacket is ERC721 {
 		_;
 	}
 
+	modifier exitsPacket(uint32 id) {
+		_requireOwned(uint256(id));
+		_;
+	}
+
 	constructor(uint8 _PACKET_SIZE) ERC721("MetaPacket", "PKT") { // The name and symbol of the token
 		owner = msg.sender;    // The owner of the contract is the one who deployed it
 		PACKET_SIZE = _PACKET_SIZE;

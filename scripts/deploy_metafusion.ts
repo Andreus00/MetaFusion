@@ -2,12 +2,12 @@ import { ethers } from "hardhat";
 
 async function main() {
   
-  const token = await ethers.deployContract("HelloToken");
+  const token = await ethers.deployContract("MetaFusionPresident");
 
   await token.waitForDeployment();
 
   console.log(
-    'HelloToken deployed.');
+    'MetaFusionPresident deployed.');
 }
 
 // We recommend this pattern to be able to use async/await everywhere

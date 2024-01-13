@@ -18,3 +18,5 @@ cache
 artifacts
 typechain-types
 package-lock.json
+
+outputs

@@ -1,0 +1,11 @@
+address: ""
+private_key: ""
+
+poll_interval: 1
+
+defaults:
+  - _self_
+  - hydra: defaults
+  - provider: httpprovider
+  - contract: data
+  - ipfs: ipfs_config

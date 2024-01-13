@@ -1,0 +1,4 @@
+_target_: "web3.Web3"
+provider: 
+  _target_: "web3.Web3.HTTPProvider"
+  endpoint_uri: "http://127.0.0.1:8545"

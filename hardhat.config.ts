@@ -10,7 +10,7 @@ const config: HardhatUserConfig = {
         runs: 200
       }
     },
-},
+  },
 };
 
 export default config;
