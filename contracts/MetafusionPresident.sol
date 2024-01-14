@@ -25,8 +25,10 @@ contract MetaFusionPresident {
     uint256 private constant GENERATION_COST = 0.1 ether;  // The cost of generating an image
 
     event PacketForged(address indexed blacksmith, uint32 packetId);
-    event PacketOpened(address indexed opener, uint32[] prompts);
-    event CreateImage(address indexed creator, uint256 prompts);
+    event PacketOpened(address indexed opener, uint32[] prompts, string[] uri);
+    event PromptCreated(uint256 IPFSCid, uint32 promptId, address to);
+    event CreateImage(address indexed creator, uint256 prompts, string uri);
+    event ImageCreated(uint256 IPFSCid, uint256 imageId, address indexed creator);
     event WillToBuyPacket(address buyer, address seller, uint256 id, uint256 value);
     event WillToBuyPrompt(address buyer, address seller, uint256 id, uint256 value);
     event WillToBuyImage(address buyer, address seller, uint256 id, uint256 value);
@@ -112,6 +114,7 @@ contract MetaFusionPresident {
         // todo: call the oracle and get the prompts
         // mock
         uint32[] memory prompts = new uint32[](PACKET_SIZE);
+        string[] memory uris = new string[](PACKET_SIZE);
         for (uint8 i = 0; i < PACKET_SIZE; i++) {
             
             uint256 idhash = uint256(keccak256(abi.encodePacked(packetID, i, block.timestamp)));
@@ -123,9 +126,14 @@ contract MetaFusionPresident {
 
             metaPrompt.mint(msg.sender, promptId);
             prompts[i] = promptId;
+            uris[i] = metaPrompt.tokenURI(promptId);
         }
 
-        emit PacketOpened(msg.sender, prompts);
+        emit PacketOpened(msg.sender, prompts, uris);
+    }
+
+    function promptMinted(uint256 IPFSCid, uint32 promptId, address to) public onlyOwner {
+        emit PromptCreated(IPFSCid, promptId, to);
     }
 
     function getPromptsOwnebBy(address _address) public view returns (uint32[] memory) {
@@ -156,12 +164,17 @@ contract MetaFusionPresident {
         // mint the card
         uint256 mergedPrompts = _mergePrompts(prompts);
         uint256 cardId = metaCard.mint(msg.sender, mergedPrompts);
+        string memory uri = metaCard.tokenURI(cardId);
         // remove the prompts from the user's list
         metaPrompt.removePromts(prompts_array, msg.sender);
         // emit event
-        emit CreateImage(msg.sender, cardId);
+        emit CreateImage(msg.sender, cardId, uri);
 
         return cardId;
+    }
+
+    function imageMinted(uint256 IPFSCid, uint32 imageId, address to) public onlyOwner {
+        emit ImageCreated(IPFSCid, imageId, to);
     }
 
     function burnImageAndRecoverPrompts(uint256 imageId) public payable {
@@ -274,5 +287,17 @@ contract MetaFusionPresident {
      */
     function refund(address buyer, uint256 value) public onlyOwner {
         _payAddress(buyer, value);
+    }
+
+    function getPacketURI(uint32 packetId) public view returns (string memory) {
+        return metaPacket.tokenURI(packetId);
+    }
+
+    function getPromptURI(uint32 promptId) public view returns (string memory) {
+        return metaPrompt.tokenURI(promptId);
+    }
+
+    function getCardURI(uint256 cardId) public view returns (string memory) {
+        return metaCard.tokenURI(cardId);
     }
 }

@@ -4,10 +4,11 @@ import asyncio
 import logging
 import time
 import json
-from event_handler import handle_event, initFilters
+from .event_handler import handle_event, initTrackerFilters
 import ipfs_api
 import os
 import multiaddr
+from .data import Data
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +41,11 @@ def instantiateIPFS(ipfs_cfg):
     hashed_gattino = ipfs_api.http_client.add("gattino.txt")['Hash']
     logger.info("IPFS API is working, hash: %s", hashed_gattino)
 
+    #Dovrebbe essere quello qua sotto
+    # ok però non hashed è un int? come fa a connettersi? credo che python ritorni una stringa o un oggetto bytes (Ma credo più una stringa)
+    # tutti possono connettersi e s/caricare merda? Si, possono, MA per ora stiamo usando un nodo privato sul pc di andrea. Se fosse in prod, si, avendo l'hash
+    # col nodo sul pc di andrea solo noi possiamo, VIENIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
+    # ok, vieni!
     gattino = ipfs_api.http_client.get(hashed_gattino)  # test if the IPFS API is working
     print(gattino)
 
@@ -70,14 +76,16 @@ def initContract(contract_cfg, provider):
     )
     return contract
 
+def initData(contract, filters):
+    return Data()
 
 
-def loop(provider, contract, filters, IPFSClient, cfg):
+def loop(provider, contract, filters, IPFSClient, data, cfg):
     num_events_found = 0
     while True:
         for filter in filters:
             for event in filter.get_new_entries():
-                handle_event(event, provider, contract, IPFSClient)
+                handle_event(event, provider, contract, IPFSClient, data)
                 num_events_found += 1
         time.sleep(cfg.poll_interval)
         logger.info(f"Events found: {num_events_found}")
@@ -93,9 +101,11 @@ def main(cfg):
 
     contract = initContract(cfg.contract, provider)
 
-    filters = initFilters(contract)
+    filters = initTrackerFilters(contract)
 
-    loop(provider, contract, filters, IPFSClient, cfg)
+    data = initData(contract, filters)
+
+    loop(provider, contract, filters, IPFSClient, data, cfg)
 
 if __name__ == "__main__":
     main()

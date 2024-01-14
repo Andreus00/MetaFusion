@@ -6,6 +6,7 @@ poll_interval: 1
 defaults:
   - _self_
   - hydra: defaults
-  - model: sdxl-turbo
   - provider: httpprovider
   - contract: data
+  - ipfs: ipfs_config
+  - model: sdxl-turbo

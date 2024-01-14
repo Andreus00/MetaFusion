@@ -20,3 +20,7 @@ typechain-types
 package-lock.json
 
 outputs
+
+*.pyc
+*.db
+*.log

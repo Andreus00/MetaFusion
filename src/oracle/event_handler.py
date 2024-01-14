@@ -1,33 +1,5 @@
-from .events import *
-
-def initTrackerFilters(contract):
-    """
-        Init the president event filters:
-            event PacketForged(address indexed blacksmith, uint32 packetUUid);
-            event PacketOpened(address indexed opener, uint32[] prompts);
-            event CreateImage(address indexed creator, uint256 prompts);
-            event willToBuyPacket(address buyer, address seller, uint256 id, uint256 value);
-            event willToBuyPrompt(address buyer, address seller, uint256 id, uint256 value);
-            event willToBuyImage(address buyer, address seller, uint256 id, uint256 value);
-            event PromptTransfered(address indexed buyer, address indexed seller, uint256 id);
-            event PacketTransfered(address indexed buyer, address indexed seller, uint256 id);
-            event CardTransfered(address indexed buyer, address indexed seller, uint256 id);
-    """
-    filters = [
-        contract.events.PacketForged.create_filter(fromBlock="latest"),
-        contract.events.PacketOpened.create_filter(fromBlock="latest"),
-        contract.events.CreateImage.create_filter(fromBlock="latest"),
-        contract.events.PromptCreated.create_filter(fromBlock="latest"),
-        contract.events.ImageCreated.create_filter(fromBlock="latest"),
-        contract.events.WillToBuyPacket.create_filter(fromBlock="latest"),
-        contract.events.WillToBuyPrompt.create_filter(fromBlock="latest"),
-        contract.events.WillToBuyImage.create_filter(fromBlock="latest"),
-        contract.events.PromptTransfered.create_filter(fromBlock="latest"),
-        contract.events.PacketTransfered.create_filter(fromBlock="latest"),
-        contract.events.CardTransfered.create_filter(fromBlock="latest"),
-    ]
-
-    return filters
+from events import get_event_class
+from events import *
 
 def initOracleFilters(contract):
     """
@@ -52,7 +24,7 @@ def initOracleFilters(contract):
 
     return filters
 
-def handle_event(event, provider, contract, IPFSClient, data):
+def handle_event(event, provider, contract, IPFSClient, model):
     '''
     New event: AttributeDict({
                 'args': AttributeDict({
@@ -76,4 +48,4 @@ def handle_event(event, provider, contract, IPFSClient, data):
     kwargs['event'] = event_name
     event_object = event_class(**kwargs)
     
-    event_object.handle(contract, provider, IPFSClient, data)
+    event_object.handle(contract, provider, IPFSClient, model)
