@@ -7,7 +7,7 @@ provider:
     _target_: web3.Web3.HTTPProvider
     endpoint_uri: http://127.0.0.1:8545
 contract:
-  contract_address: MetaFusionPresident
+  contract_address: '0x5fbdb2315678afecb367f032d93f642f64180aa3'
 ipfs:
   peer: /ip4/0.0.0.0/tcp/5001
 db:

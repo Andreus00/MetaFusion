@@ -17,8 +17,8 @@ packets[other_priv_key] = {};
 const FORGE_TOT_PACKETS = 3;
 
 
-function genPKUUID(collection: number | bigint | boolean, idInCollection: number | bigint | boolean){
-    return (BigInt(idInCollection) << BigInt(16)) | BigInt(collection)
+function genPKUUID(collection: number , idInCollection: number){
+    return ((idInCollection) << (16)) | (collection)
 }
 
 async function connect(contractName: string) {
@@ -36,10 +36,10 @@ async function connect(contractName: string) {
 
     // connect to contract as owner and forge collection
 
-    let args = { value: ethers.parseEther("0.1") }
+    let args = { value: ethers.parseEther("1") }
 
     const contract_owner = await ethers.getContractAt(contractName, contract_address, wallet_owner)
-    const contract_other = await ethers.getContractAt(contractName, contract_address, wallet_other2)
+    const contract_other = await ethers.getContractAt(contractName, contract_address, wallet_other)
 
     const contracts = [contract_owner, contract_other]
 
@@ -51,66 +51,86 @@ async function connect(contractName: string) {
 
             for (let x = 0; x < contracts.length; x++) {
                 let cur_contract = contracts[x];
-                let cur_address: string = await cur_contract.getAddress();
+                let cur_address: string = await cur_contract.runner?.getAddress();  // it actually exists
+                console.log(cur_address);
                 packets[cur_address][collection] = [];
+                console.log(packets);
             }
 
             let tot_packets = 0;
             for (let j = 0; j < contracts.length; j++) {
                 let cur_contract = contracts[j];
-                let cur_address: string = await cur_contract.getAddress();
+                let cur_address: string = await cur_contract.runner?.getAddress();  // it actually exists
 
                 for (let k = 0; k < FORGE_TOT_PACKETS; k++) {
+                    tot_packets++;
+                    let packID = genPKUUID(collection, tot_packets)
                     let tx = await cur_contract.forgePacket(collection, args)
                     await tx.wait();
-                    
-                    tot_packets++;
-                    packets[cur_address][collection].push(tot_packets);
+                    packets[cur_address][collection].push(packID);
                 }
             }
         }
+
+        console.log(packets);
     }
+
+    // sleep
+    await new Promise(r => setTimeout(r, 2500));
 
     if (SIMULATE_PACKET_TRANSFER) {
-        var collection = 1
-        var packet_id = 1
         // seller lists packet for sale
+        let packet_id = packets[wallet_owner.address][collections[0]][0];
 
-        
-
+        let tx = await contract_owner.listPacket(packet_id);
+        await tx.wait();
 
         // buyer calls the willToBuy
+        let tx2 = await contract_other.buyPacket(packet_id, args);
+        await tx2.wait();
 
+        // wait for the transfer to be completed
+        await new Promise(r => setTimeout(r, 2500));
 
-        
-        // get user2
+        packets[wallet_owner.address][collections[0]].splice(0, 1);
+        packets[wallet_other.address][collections[0]].push(packet_id);
 
+        // check the ownership on blockchain
+        let owner = await contract_owner.ownerOfPacket(packet_id);
+        console.log('new owner: ', owner);
+
+        // check the balance of the buyer and seller
+        let balance_owner = await wallet_owner.provider.getBalance(owner_priv_key);
+        console.log('balance_owner: ', balance_owner);
+
+        let balance_other = await wallet_owner.provider.getBalance(other_priv_key);
+        console.log('balance_other: ', balance_other);
     }
 
 
-    if (SIMULATE_PACKET_OPENING) {
-        let packet_id_start;
+    // if (SIMULATE_PACKET_OPENING) {
+    //     let packet_id_start;
 
-        for (let i = 0; i < collections.length; i++) {
-            let collection = collections[i]
-            let packet_id_end = collection & 0xffff
+    //     for (let i = 0; i < collections.length; i++) {
+    //         let collection = collections[i]
+    //         let packet_id_end = collection & 0xffff
             
-            let cur_contract = contract_owner;
-            let next_contract = contract_other;
+    //         let cur_contract = contract_owner;
+    //         let next_contract = contract_other;
 
-            for (let j = 0; j < packets.length; j++) {
-                let packet_num = packets[j]
-                packet_id_start = packet_num << 16;
-                let packet_id = packet_id_start | packet_id_end;
-                let tx = await cur_contract.openPacket(packet_id, args);
-                await tx.wait();
+    //         for (let j = 0; j < packets.length; j++) {
+    //             let packet_num = packets[j]
+    //             packet_id_start = packet_num << 16;
+    //             let packet_id = packet_id_start | packet_id_end;
+    //             let tx = await cur_contract.openPacket(packet_id, args);
+    //             await tx.wait();
                 
-                let tmp = cur_contract;
-                cur_contract = next_contract;
-                next_contract = tmp;
-            }
-        }
-    }
+    //             let tmp = cur_contract;
+    //             cur_contract = next_contract;
+    //             next_contract = tmp;
+    //         }
+    //     }
+    // }
 
 
     return;

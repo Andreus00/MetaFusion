@@ -126,17 +126,36 @@ class WillToBuyPacket(WillToBuyEvent):
         '''
         Pay the seller and send the packet to the buyer
         '''
+        cur = con.cursor()
         try:
-            cur = con.get_cursor()
-
             # get the packet price
-            cur.execute(f"SELECT price FROM packets WHERE id={self.id}")
+            print(self.id)
+            cur.execute(f"SELECT price FROM packets WHERE id=?", (self.id,))
             price = cur.fetchone()[0]
+            print(price)
             
             # check if the buyer sent enough money
             if self.value >= price:
                 # execute the transfer
-                contract.transferPacket(self.buyer, self.seller, self.id, price)
+
+                # call the function
+                call_func = contract.functions.transferPacket(**{"buyer": self.buyer, "seller": self.seller, "packetId": self.id, "val": price})\
+                                .build_transaction({
+                                    "from": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+                                    "nonce": provider.eth.get_transaction_count("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"),
+                                })
+                
+                # sign the transaction
+                signed_tx = provider.eth.account.sign_transaction(call_func, private_key="0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80")
+
+                # send the transaction
+                send_tx = provider.eth.send_raw_transaction(signed_tx.rawTransaction)
+
+                # wait for transaction receipt
+                tx_receipt = provider.eth.wait_for_transaction_receipt(send_tx)
+                
+                
+                # contract.transferPacket(self.buyer, self.seller, self.id, price)
             else:
                 # refund the buyer
                 contract.refund(self.buyer, self.value)
@@ -150,8 +169,8 @@ class WillToBuyPrompt(WillToBuyEvent):
         '''
         Pay the seller and send the packet to the buyer
         '''
+        cur = con.cursor()
         try:
-            cur = con.get_cursor()
 
             # get the packet price
             cur.execute(f"SELECT price FROM prompts WHERE id={self.id}")
@@ -175,8 +194,8 @@ class WillToBuyImage(WillToBuyEvent):
         '''
         Pay the seller and send the packet to the buyer
         '''
+        cur = con.cursor()
         try:
-            cur = con.get_cursor()
 
             # get the packet price
             cur.execute(f"SELECT price FROM images WHERE id={self.id}")

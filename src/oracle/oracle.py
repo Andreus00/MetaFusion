@@ -23,10 +23,11 @@ def initModel(model_cfg):
     return model
 
 def initDBConnection(db_cfg):
-	con = hydra.utils.call(db_cfg)
+	return hydra.utils.call(db_cfg)
 
 def instantiateProvider(provider_cfg):
-    provider = hydra.utils.instantiate(provider_cfg)
+    provider: web3.Web3 = hydra.utils.instantiate(provider_cfg)
+    provider.eth.default_account = provider.eth.accounts[0]
 
     logger.info("Provider instantiated.")
     is_connected = provider.is_connected()
@@ -66,8 +67,9 @@ def getABI():
 
 def initContract(contract_cfg, provider):
     ABI = getABI()
+    address = provider.to_checksum_address(contract_cfg.contract_address)
     contract = provider.eth.contract(
-        # address = contract_cfg.contract_address,
+        address = address,
         abi = ABI
     )
     return contract

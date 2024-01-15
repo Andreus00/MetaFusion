@@ -171,8 +171,8 @@ class Data:
 	def get_packet(self, packet_id: int):
 		cur = self.get_cursor()
 		try:
-			cur.execute('SELECT * FROM Packets WHERE id=?', (packet_id,))
-			res = cur.fetchone()
+			cur.execute('SELECT * FROM Packets WHERE id=?', (str(packet_id),))
+			res = cur.fetchone()[0]
 			if res is not None:
 				ret = Packet()
 				ret.initWithDb(res)

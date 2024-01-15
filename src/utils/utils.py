@@ -2,7 +2,7 @@
 
 def from_int_to_hex_str(integer: int):
     return integer
-    return str(hex(int))
+    return str(hex(integer))
 
 def from_str_hex_to_int_str(hex_string: str):
     return int(hex_string, 0)
