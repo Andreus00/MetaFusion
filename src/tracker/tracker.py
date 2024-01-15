@@ -38,22 +38,6 @@ def instantiateIPFS(ipfs_cfg):
             raise Exception("Houston, we have a problem here.")
     print("IPFS is running!")
     
-    hashed_gattino = ipfs_api.http_client.add("gattino.txt")['Hash']
-    logger.info("IPFS API is working, hash: %s", hashed_gattino)
-
-    #Dovrebbe essere quello qua sotto
-    # ok però non hashed è un int? come fa a connettersi? credo che python ritorni una stringa o un oggetto bytes (Ma credo più una stringa)
-    # tutti possono connettersi e s/caricare merda? Si, possono, MA per ora stiamo usando un nodo privato sul pc di andrea. Se fosse in prod, si, avendo l'hash
-    # col nodo sul pc di andrea solo noi possiamo, VIENIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
-    # ok, vieni!
-    gattino = ipfs_api.http_client.get(hashed_gattino)  # test if the IPFS API is working
-    print(gattino)
-
-    logger.info("IPFS API is working, data: %s", gattino)
-
-    # QmeWEMWZfsSRYF427FPwcprrkLydQi5JNxthHHRGjt638e
-    # QmWhEKScDyscbRn3eQGh2B4yGbqqeNMZsCw7zDZzSUTaST
-
     logger.info("IPFS ID: %s", client.my_id()) # print your IPFS peer ID
     return client
 

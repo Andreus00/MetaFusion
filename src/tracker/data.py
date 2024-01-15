@@ -4,7 +4,7 @@ import base58
 import json
 import os
 from ..utils.utils import from_int_to_hex_str, from_str_hex_to_int_str
-
+from ..db.database import CreateDatabase, DatabaseConnection
 
 class Packet:
 	id: int
@@ -112,22 +112,14 @@ class Image:
 
 class Data:
 	def __init__(self):
-		con = sqlite3.connect("tracker.db")
-		self.con = con
-		cur = con.cursor()
-		# cur.execute("CREATE TABLE IF NOT EXIST Users(addr BIGINT PRIMARY KEY);")
-		cur.execute("CREATE TABLE IF NOT EXISTS Packets(id VARCHAR(65) PRIMARY KEY, isListed BIT DEFAULT 0, price INT DEFAULT 0, userHex VARCHAR(65) NOT NULL);")
-		cur.execute("CREATE TABLE IF NOT EXISTS Prompts(id VARCHAR(65) PRIMARY KEY, ipfsHash VARCHAR(35) NOT NULL, isListed BIT DEFAULT 0, price INT DEFAULT 0, BIT isFreezed DEFAULT 0, userHex VARCHAR(65) NOT NULL, name TEXT);")
-		cur.execute("CREATE TABLE IF NOT EXISTS Images(id VARCHAR(65) PRIMARY KEY, ipfsHash VARCHAR(35) NOT NULL, isListed BIT DEFAULT 0, price INT DEFAULT 0, userHex VARCHAR(65) NOT NULL);")
-		cur.execute("CREATE TABLE IF NOT EXISTS SellEvents(id INTEGER PRIMARY KEY AUTOINCREMENT, objId VARCHAR(65), userFromHex VARCHAR(65) NOT NULL, userToHex VARCHAR(65) NOT NULL, price INT DEFAULT 0, type TINYINT CHECK(type IN (0, 1, 2)));") # 0 = Packet, 1 = Prompts, 2 = Images
-		cur.execute("CREATE INDEX IF NOT EXISTS userPacketsIndex ON Packets(userHex);")
-		cur.execute("CREATE INDEX IF NOT EXISTS userPromptsIndex ON Prompts(userHex);")
-		cur.execute("CREATE INDEX IF NOT EXISTS userImagesIndex ON Images(userHex);")
-		cur.execute("CREATE INDEX IF NOT EXISTS sellEventObjIndex ON SellEvents(objId, type);")
-		self.cur = cur
+		self.con = DatabaseConnection()
+		
+		cd = CreateDatabase(self.con)
+		cd.create()
+		
 
 	def get_cursor(self):
-		return self.con.cursor()
+		return self.con().cursor()
 
 
 	def get_packets_id_of(self, userIdHex: str):
@@ -343,7 +335,7 @@ class Data:
 	def unlist_packet(self, packet_id: int):
 		cur = self.get_cursor()
 		try:
-			cur.execute('UPDATE Packets SET isListed = 0 WHERE id = ?', (from_int_to_hex_str(packet_id),))
+			cur = cur.execute('UPDATE Packets SET isListed = 0 WHERE id = ?', (from_int_to_hex_str(packet_id),))
 			self.con.commit()
 			return True
 		finally:
@@ -362,6 +354,8 @@ class Data:
 		cur = self.get_cursor()
 		try:
 			cur.execute('INSERT INTO Prompts (id, userHex) VALUES(?, ?)', (from_int_to_hex_str(prompt.id), from_int_to_hex_str(user_id)),)
+			print('PORCODDIO')
+			print(cur.fetchall())
 			self.con.commit()
 			return True
 		finally:
@@ -379,7 +373,7 @@ class Data:
 	def remove_packet_from(self, packet_id: int, user_id: int):
 		cur = self.get_cursor()
 		try:
-			cur.execute('DELETE FROM Packets WHERE id=? and userHex=?', (from_int_to_hex_str(packet_id.id), from_int_to_hex_str(user_id)),)
+			cur.execute('DELETE FROM Packets WHERE id=? and userHex=?', (from_int_to_hex_str(packet_id), from_int_to_hex_str(user_id)),)
 			self.con.commit()
 			return True
 		finally:
@@ -388,7 +382,7 @@ class Data:
 	def remove_prompt_from(self, prompt_id: int, user_id: int):
 		cur = self.get_cursor()
 		try:
-			cur.execute('DELETE FROM Prompts WHERE id=? and userHex=?', (from_int_to_hex_str(prompt_id.id), from_int_to_hex_str(user_id)),)
+			cur.execute('DELETE FROM Prompts WHERE id=? and userHex=?', (from_int_to_hex_str(prompt_id), from_int_to_hex_str(user_id)),)
 			self.con.commit()
 			return True
 		finally:

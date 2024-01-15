@@ -121,4 +121,9 @@ contract MetaPacket is ERC721 {
 	function openPacket(address opener, uint32 id) public payable onlyOwner onlyPacketOwner(id, opener) {
 		_burn(uint256(id));
 	}
+
+	
+	function approve(address to, uint256 tokenId) public virtual override onlyOwner {
+        _approve(to, tokenId, tx.origin);
+    }
 }

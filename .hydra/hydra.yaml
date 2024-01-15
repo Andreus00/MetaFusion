@@ -113,12 +113,12 @@ hydra:
     - hydra.mode=RUN
     task: []
   job:
-    name: tracker
+    name: oracle
     chdir: null
     override_dirname: ''
     id: ???
     num: ???
-    config_name: tracker_config
+    config_name: oracle_config
     env_set: {}
     env_copy: []
     config:
@@ -142,6 +142,8 @@ hydra:
       provider: schema
     output_dir: /home/andrea/Documenti/Computer Science/Blockchain/project/MetaFusion
     choices:
+      model: sdxl-turbo
+      db: sqlite
       ipfs: ipfs_config
       contract: data
       provider: httpprovider

@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Listg, Dict
+from typing import List, Dict
 from random import choice
 
 

@@ -140,9 +140,14 @@ contract MetaPrompt is ERC721 {
             revert("No prompts used!");
         }
         for (uint8 i = 0; i < NUM_PROMPT_TYPES; i++) {
-		if (_prompts[i] != 0){
-                	_burn(_prompts[i]);
-		}
+            if (_prompts[i] != 0){
+                        _burn(_prompts[i]);
+            }
     	}	
+    }
+
+
+	function approve(address to, uint256 tokenId) public virtual override onlyOwner {
+        _approve(to, tokenId, tx.origin);
     }
 }

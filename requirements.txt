@@ -5,3 +5,4 @@ diffusers
 numpy
 IPFS-Toolkit
 hydra-core
+accelerate

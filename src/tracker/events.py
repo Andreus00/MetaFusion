@@ -26,7 +26,7 @@ class PacketForged(Event):
     def handle(self, contract, provider, IPFSClient, data: Data):
         packet = Packet()
         packet.initWithParams(id=self.packetId, userIdHex=self.blacksmith)
-        data.add_packet_to(packet, (self.blacksmith))
+        data.add_packet_to(packet, self.blacksmith)
         return data
         
 
@@ -49,7 +49,7 @@ class PromptCreated(Event):
 class PacketOpened(Event):
     opener: str
     prompts: List[int]
-    uri = List[str]  # uri of prompts 
+    uri: List[str]  # uri of prompts 
 
     def handle(self, contract, provider, IPFSClient, data: Data):
         '''Just delete the packet burnt, because it can't be never used
@@ -145,6 +145,7 @@ class TransferEvent(Event):
     buyer: str
     seller: str
     id: int
+    value: int  # value of the NFT
 
 @dataclass
 class PacketTransfered(TransferEvent):

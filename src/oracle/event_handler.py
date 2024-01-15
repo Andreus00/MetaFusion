@@ -1,5 +1,4 @@
-from events import get_event_class
-from events import *
+from .events import *
 
 def initOracleFilters(contract):
     """
@@ -24,7 +23,7 @@ def initOracleFilters(contract):
 
     return filters
 
-def handle_event(event, provider, contract, IPFSClient, model):
+def handle_event(event, provider, contract, IPFSClient, model, con):
     '''
     New event: AttributeDict({
                 'args': AttributeDict({
@@ -48,4 +47,4 @@ def handle_event(event, provider, contract, IPFSClient, model):
     kwargs['event'] = event_name
     event_object = event_class(**kwargs)
     
-    event_object.handle(contract, provider, IPFSClient, model)
+    event_object.handle(contract, provider, IPFSClient, model, con)

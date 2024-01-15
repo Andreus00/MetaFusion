@@ -22,5 +22,6 @@ package-lock.json
 outputs
 
 *.pyc
+__pycache__/
 *.db
 *.log

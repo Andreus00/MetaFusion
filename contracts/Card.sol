@@ -86,7 +86,6 @@ contract MetaCard is ERC721 {
 
     function destroyCard(uint256 imageId) payable public onlyOwner{
         _burn(imageId);
-        // delete image from list
     }
 
     function deleteCard(uint256 card, address caller) public onlyOwner{
@@ -112,5 +111,11 @@ contract MetaCard is ERC721 {
         // metadata[id].is_finalized = false;
         card_list[to].push(cardPrompts);
         return cardPrompts;
+    }
+
+
+
+	function approve(address to, uint256 tokenId) public virtual override onlyOwner {
+        _approve(to, tokenId, tx.origin);
     }
 }

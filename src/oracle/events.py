@@ -1,14 +1,13 @@
 from dataclasses import dataclass
 from abc import abstractmethod, ABC
-from data import Data, Packet, Image, Prompt
 from typing import List
-from word_generator import Atlas
+from ..word_generator import Atlas
 from ..utils import utils
 import os
 import json
 
 PACKET_SIZE = 8
-word_generator = Atlas(PACKET_SIZE)
+word_generator = Atlas.WordExtractor()
 
 
 @dataclass
@@ -16,7 +15,7 @@ class Event(ABC):
     event: str
 
     @abstractmethod
-    def handle(self, contract, provider, IPFSClient, model):
+    def handle(self, contract, provider, IPFSClient, model, con):
         pass
         
 
@@ -26,7 +25,7 @@ class PacketOpened(Event):
     prompts: List[int]
     uri = List[str]  # uri of prompts 
 
-    def handle(self, contract, provider, IPFSClient, model):
+    def handle(self, contract, provider, IPFSClient, model, con):
         '''
         Generate and add prompt on IPFS
         '''
@@ -61,7 +60,7 @@ class CreateImage(Event):
     card: int
     uri: str
 
-    def handle(self, contract, provider, IPFSClient, model):
+    def handle(self, contract, provider, IPFSClient, model, con):
         '''
         Generate and image and add it to IPFS
         '''
@@ -116,35 +115,82 @@ class WillToBuyEvent(Event):
     '''
     buyer: str
     seller: str
-    value: float
+    id: str
+    value: int
 
 
 @dataclass
 class WillToBuyPacket(WillToBuyEvent):
     
-    def handle(self, contract, provider, IPFSClient, model):
+    def handle(self, contract, provider, IPFSClient, model, con):
         '''
         Pay the seller and send the packet to the buyer
         '''
-        pass
+        try:
+            cur = con.get_cursor()
+
+            # get the packet price
+            cur.execute(f"SELECT price FROM packets WHERE id={self.id}")
+            price = cur.fetchone()[0]
+            
+            # check if the buyer sent enough money
+            if self.value >= price:
+                # execute the transfer
+                contract.transferPacket(self.buyer, self.seller, self.id, price)
+            else:
+                # refund the buyer
+                contract.refund(self.buyer, self.value)
+        finally:
+            cur.close()
 
 @dataclass
 class WillToBuyPrompt(WillToBuyEvent):
     
-    def handle(self, contract, provider, IPFSClient, model):
+    def handle(self, contract, provider, IPFSClient, model, con):
         '''
         Pay the seller and send the packet to the buyer
         '''
-        return super().handle()
+        try:
+            cur = con.get_cursor()
+
+            # get the packet price
+            cur.execute(f"SELECT price FROM prompts WHERE id={self.id}")
+            price = cur.fetchone()[0]
+            
+            # check if the buyer sent enough money
+            if self.value >= price:
+                # execute the transfer
+                contract.transferPrompt(self.buyer, self.seller, self.id, price)
+            else:
+                # refund the buyer
+                contract.refund(self.buyer, self.value)
+        finally:
+            cur.close()
+
 
 @dataclass
 class WillToBuyImage(WillToBuyEvent):
     
-    def handle(self, contract, provider, IPFSClient, model):
+    def handle(self, contract, provider, IPFSClient, model, con):
         '''
         Pay the seller and send the packet to the buyer
         '''
-        return super().handle()
+        try:
+            cur = con.get_cursor()
+
+            # get the packet price
+            cur.execute(f"SELECT price FROM images WHERE id={self.id}")
+            price = cur.fetchone()[0]
+            
+            # check if the buyer sent enough money
+            if self.value >= price:
+                # execute the transfer
+                contract.transferImage(self.buyer, self.seller, self.id, price)
+            else:
+                # refund the buyer
+                contract.refund(self.buyer, self.value)
+        finally:
+            cur.close()
 
 
 def get_event_class(event_name):

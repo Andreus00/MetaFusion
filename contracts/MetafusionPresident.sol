@@ -32,9 +32,9 @@ contract MetaFusionPresident {
     event WillToBuyPacket(address buyer, address seller, uint256 id, uint256 value);
     event WillToBuyPrompt(address buyer, address seller, uint256 id, uint256 value);
     event WillToBuyImage(address buyer, address seller, uint256 id, uint256 value);
-    event PromptTransfered(address indexed buyer, address indexed seller, uint256 id);
-    event PacketTransfered(address indexed buyer, address indexed seller, uint256 id);
-    event CardTransfered(address indexed buyer, address indexed seller, uint256 id);
+    event PromptTransfered(address indexed buyer, address indexed seller, uint256 id, uint256 value);
+    event PacketTransfered(address indexed buyer, address indexed seller, uint256 id, uint256 value);
+    event CardTransfered(address indexed buyer, address indexed seller, uint256 id, uint256 value);
     
     modifier onlyOwner() {
         require(msg.sender == owner, "Only the owner of the contract can perform this action!");
@@ -178,7 +178,7 @@ contract MetaFusionPresident {
     }
 
     function burnImageAndRecoverPrompts(uint256 imageId) public payable {
-        require(metaCard.isCardOwnedBy(msg.sender, imageId), "You are not the image owwwner");
+        require(metaCard.isCardOwnedBy(msg.sender, imageId), "You are not the image owner");
         metaCard.destroyCard(imageId);
         metaCard.deleteCard(imageId, msg.sender);
         imageId = imageId >> 64; //remove seed
@@ -250,7 +250,7 @@ contract MetaFusionPresident {
     function transferPacket(address buyer, address seller, uint32 packetId, uint256 val) public isPacketListed(packetId) onlyOwner {
         _payAddress(seller, val);
         metaPacket.transferFrom(seller, buyer, packetId);
-        emit PacketTransfered(buyer, seller, packetId);
+        emit PacketTransfered(buyer, seller, packetId, val);
     }
 
     /**
@@ -263,7 +263,7 @@ contract MetaFusionPresident {
     function transferPrompt(address buyer, address seller, uint32 promptId, uint256 val) public isPromptListed(promptId) onlyOwner {
         _payAddress(seller, val);
         metaPrompt.transferFrom(seller, buyer, promptId);
-        emit PromptTransfered(buyer, seller, promptId);
+        emit PromptTransfered(buyer, seller, promptId, val);
     }
 
     /**
@@ -276,7 +276,7 @@ contract MetaFusionPresident {
     function transferCard(address buyer, address seller, uint32 imageId, uint256 val) public isCardListed(imageId) onlyOwner {
         _payAddress(seller, val);
         metaCard.transferFrom(seller, buyer, imageId);
-        emit CardTransfered(buyer, seller, imageId);
+        emit CardTransfered(buyer, seller, imageId, val);
     }
 
 
@@ -299,5 +299,29 @@ contract MetaFusionPresident {
 
     function getCardURI(uint256 cardId) public view returns (string memory) {
         return metaCard.tokenURI(cardId);
+    }
+
+    function listPrompt(uint32 promptId) public {
+        metaPrompt.approve(address(this), promptId);
+    }
+
+    function listPacket(uint32 packetId) public {
+        metaPacket.approve(address(this), packetId);
+    }
+
+    function listCard(uint256 cardId) public {
+        metaCard.approve(address(this), cardId);
+    }
+
+    function unlistPrompt(uint32 promptId) public {
+        metaPrompt.approve(address(0), promptId);
+    }
+
+    function unlistPacket(uint32 packetId) public {
+        metaPacket.approve(address(0), packetId);
+    }
+
+    function unlistCard(uint256 cardId) public {
+        metaCard.approve(address(0), cardId);
     }
 }

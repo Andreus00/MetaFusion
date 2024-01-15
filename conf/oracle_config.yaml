@@ -9,4 +9,5 @@ defaults:
   - provider: httpprovider
   - contract: data
   - ipfs: ipfs_config
+  - db: sqlite
   - model: sdxl-turbo

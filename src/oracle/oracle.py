@@ -4,10 +4,10 @@ import time
 import logging
 import time
 import json
-from event_handler import handle_event, initTrackerFilters
+from .event_handler import handle_event, initOracleFilters
 import diffusers
 
-
+import sqlite3
 import ipfs_api
 import os
 import multiaddr
@@ -21,6 +21,9 @@ def initModel(model_cfg):
     model = hydra.utils.call(model_cfg)
     logger.info("Model instantiated.")
     return model
+
+def initDBConnection(db_cfg):
+	con = hydra.utils.call(db_cfg)
 
 def instantiateProvider(provider_cfg):
     provider = hydra.utils.instantiate(provider_cfg)
@@ -69,13 +72,13 @@ def initContract(contract_cfg, provider):
     )
     return contract
 
-def loop(provider, contract, filters, IPFSClient, model, cfg):
+def loop(provider, contract, filters, IPFSClient, model, con, cfg):
     num_events_found = 0
     while True:
         for filter in filters:
             for event in filter.get_new_entries():
                 num_events_found += 1
-                handle_event(event, provider, contract, IPFSClient, model)
+                handle_event(event, provider, contract, IPFSClient, model, con)
         time.sleep(cfg.poll_interval)
         logger.info(f"Events found: {num_events_found}")
 
@@ -85,6 +88,8 @@ def main(cfg):
     # create the model
     model = initModel(cfg.model)
 
+    con = initDBConnection(cfg.db)
+
     # connect to IPFS
     IPFSClient = instantiateIPFS(cfg.ipfs)
 
@@ -93,9 +98,9 @@ def main(cfg):
 
     contract = initContract(cfg.contract, provider)
 
-    filters = initTrackerFilters(contract)
+    filters = initOracleFilters(contract)
 
-    loop(provider, contract, filters, IPFSClient, model, cfg)
+    loop(provider, contract, filters, IPFSClient, model, con, cfg)
 
 if __name__ == "__main__":
     main()
