@@ -9,6 +9,18 @@ PACKET_SIZE = 8
 NUM_PROMPT_TYPES = 6
 
 
+'''
+0) CollectionForged: When a collection is created. Only the owner of the contract can forge packets.
+1) Packet forged: When packets are minted in blockchain
+
+2) Packet opened: When packets are opened on blockchain (and prompts are created, this is handled in a different event). Packets are still not in IPFS.
+3) Prompt created: When a prompt is created in IPFS by oracle
+
+4) Create Image: When an image is created in blockchain. Images are still not in IPFS.
+5) Image created: When an image is created in IPFS by oracle
+'''
+
+
 @dataclass
 class Event(ABC):
     event: str
@@ -24,26 +36,12 @@ class PacketForged(Event):
     # uri: str
 
     def handle(self, contract, provider, IPFSClient, data: Data):
+        '''
+        Create a packet in the database
+        '''
         packet = Packet()
-        packet.initWithParams(id=self.packetId, userIdHex=self.blacksmith)
-        data.add_packet_to(packet, self.blacksmith)
+        packet.initWithParams(id=self.packetId, userIdHex=self.blacksmith, data=data)
         return data
-        
-
-@dataclass
-class PromptCreated(Event):
-    opener: str
-    prompt: int
-    IPFSCid: int
-
-    def handle(self, contract, provider, IPFSClient, data: Data):
-        prompt = Prompt()
-        prompt_name = IPFSClient.http_client.get(self.IPFSCid)
-        prompt.initWithParams(self.prompt, hash=str(self.IPFSCid), 
-                    name=prompt_name, 
-                    userIdHex=from_int_to_hex_str(int(self.opener)))
-        data.add_prompt_to(prompt=prompt, user_id=int(self.opener))
-        pass
 
 @dataclass
 class PacketOpened(Event):
@@ -52,18 +50,39 @@ class PacketOpened(Event):
     uri: List[str]  # uri of prompts 
 
     def handle(self, contract, provider, IPFSClient, data: Data):
-        '''Just delete the packet burnt, because it can't be never used
+        '''
+        Delete the packet burnt from the database and create the prompts without IPFS hash
         ID: 0-12 collection
         13-15 prompt type
         16-28 packet id in collection
         29-31 sequence number of the prompt in packet
-        [31, 30, 29, 28, 27, 26, 25, 24, 23, 22, ... , 3, 2, 1, 0]'''
-        prompt = self.prompts.pop()
+        [31, 30, 29, 28, 27, 26, 25, 24, 23, 22, ... , 3, 2, 1, 0]
+        '''
+        prompt = self.prompts[0]
         # get collection id then
         # get packet id in collection
         packet_id = prompt & 0x1fff1fff
         data.remove_packet_from(packet_id=packet_id, user_id=self.opener)
-        
+
+        for prompt, uri in zip(self.prompts, self.uri):
+            # TODO: create prompt in the database
+            pass
+@dataclass
+class PromptCreated(Event):
+    opener: str
+    prompt: int
+    IPFSCid: int
+
+    def handle(self, contract, provider, IPFSClient, data: Data):
+        '''
+        Add the IPFS hash to the prompt in the database and the "name" of the prompt
+        '''
+        prompt = Prompt()
+        prompt_name = IPFSClient.http_client.get(self.IPFSCid)
+        prompt.initWithParams(self.prompt, hash=str(self.IPFSCid), 
+                    name=prompt_name, 
+                    userIdHex=self.opener, 
+                    data=data) #Not sure this is correct
 
 @dataclass
 class CreateImage(Event):
@@ -78,9 +97,8 @@ class CreateImage(Event):
 
         image = Image()
         image.initWithParams(id=self.card, 
-                            userIdHex=from_int_to_hex_str(int(self.creator),
-                            hash=str(self.IPFSCid)))
-        image.add_image_to(image, int(self.creator))
+                            userIdHex=from_int_to_hex_str(int(self.creator))) # Is this correct?
+        image.writeToDb(data)
         return super().handle()
 
 @dataclass

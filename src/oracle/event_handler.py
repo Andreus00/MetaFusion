@@ -39,12 +39,14 @@ def handle_event(event, provider, contract, IPFSClient, model, con):
                 'blockNumber': 13}
                 )
     '''
+    print(f"Handle: {event.event}")
     event_name = event.event
     event_args = event.args
 
     event_class = get_event_class(event_name)
     kwargs = dict(event_args)
     kwargs['event'] = event_name
+    print("Arguments:", kwargs)
     event_object = event_class(**kwargs)
     
     event_object.handle(contract, provider, IPFSClient, model, con)

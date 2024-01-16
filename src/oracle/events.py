@@ -23,7 +23,7 @@ class Event(ABC):
 class PacketOpened(Event):
     opener: str
     prompts: List[int]
-    uri = List[str]  # uri of prompts 
+    uri: List[str]  # uri of prompts
 
     def handle(self, contract, provider, IPFSClient, model, con):
         '''
@@ -31,9 +31,11 @@ class PacketOpened(Event):
         '''
 
         for prompt, uri in zip(self.prompts, self.uri):
-            index, collection, type_id, packet = utils.getInfoFromPromptId(prompt)
+            _, packet, type_id, collection = utils.getInfoFromPromptId(prompt)
 
-            random_prompt = word_generator.generate_prompt(index, collection, type_id, packet, prompt)
+            print(hex(int(prompt)), collection, type_id, packet)
+
+            random_prompt = word_generator.generate_prompt(collection, type_id, prompt)
 
             file_name = f"{prompt}.json"
             path = f"ipfs/packet/{file_name}"
@@ -50,9 +52,29 @@ class PacketOpened(Event):
             # push the prompt on IPFS
             cid = IPFSClient.publish(path)
 
-            # publish the cid on the blockchain
-            contract.promptMinted(cid, prompt, self.opener)
+            cid_int = utils.cidToInt256(cid)
+            
+            # call the function
+            call_func = contract.functions.promptMinted(**{
+                                        "IPFSCid": cid_int,
+                                        "promptId": prompt,
+                                        "to": self.opener, 
+                                        })\
+                                    .build_transaction({
+                                        "from": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+                                        "nonce": provider.eth.get_transaction_count("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"),
+                                    })
+            
+            # sign the transaction
+            signed_tx = provider.eth.account.sign_transaction(call_func, private_key="0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80")
 
+            # send the transaction
+            send_tx = provider.eth.send_raw_transaction(signed_tx.rawTransaction)
+
+            # wait for transaction receipt
+            tx_receipt = provider.eth.wait_for_transaction_receipt(send_tx)
+                
+                
 
 @dataclass
 class CreateImage(Event):
@@ -130,7 +152,7 @@ class WillToBuyPacket(WillToBuyEvent):
         try:
             # get the packet price
             print(self.id)
-            cur.execute(f"SELECT price FROM packets WHERE id=?", (self.id,))
+            cur.execute(f"SELECT price FROM packets WHERE id=?", (utils.from_int_to_hex_str(self.id),))
             price = cur.fetchone()[0]
             print(price)
             

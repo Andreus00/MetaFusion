@@ -1,4 +1,6 @@
 import { ethers } from "hardhat";
+import { TransactionReceipt } from "@ethersproject/abstract-provider";
+
 // import * as fs from 'fs';
 
 const contract_address = "0x5fbdb2315678afecb367f032d93f642f64180aa3"
@@ -10,9 +12,13 @@ const other2_priv_key: string = '0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC'
 
 const collections = [1, 2]
 
-var packets: { [id: string] : { [collection: string] : number[]} } = {};
+var packets: { [user: string] : { [collection: number] : number[]} } = {};
 packets[owner_priv_key] = {};
 packets[other_priv_key] = {};
+
+var prompts: { [user: string] : { [collection: number] : number[]} } = {};
+prompts[owner_priv_key] = {};
+prompts[other_priv_key] = {};
 
 const FORGE_TOT_PACKETS = 3;
 
@@ -108,29 +114,29 @@ async function connect(contractName: string) {
     }
 
 
-    // if (SIMULATE_PACKET_OPENING) {
-    //     let packet_id_start;
-
-    //     for (let i = 0; i < collections.length; i++) {
-    //         let collection = collections[i]
-    //         let packet_id_end = collection & 0xffff
-            
-    //         let cur_contract = contract_owner;
-    //         let next_contract = contract_other;
-
-    //         for (let j = 0; j < packets.length; j++) {
-    //             let packet_num = packets[j]
-    //             packet_id_start = packet_num << 16;
-    //             let packet_id = packet_id_start | packet_id_end;
-    //             let tx = await cur_contract.openPacket(packet_id, args);
-    //             await tx.wait();
-                
-    //             let tmp = cur_contract;
-    //             cur_contract = next_contract;
-    //             next_contract = tmp;
-    //         }
-    //     }
-    // }
+    if (SIMULATE_PACKET_OPENING) {
+        // cycle on collections, wallets  and packets
+        for (let i = 0; i < collections.length; i++) {
+            let collection = collections[i];
+            for (let j = 0; j < contracts.length; j++) {
+                let cur_contract = contracts[j];
+                let cur_address = await cur_contract.runner?.getAddress();
+                let cur_packets = packets[cur_address][collection];
+                for (let k = 0; k < cur_packets.length; k++) {
+                    let packet_id =cur_packets[k];
+                    let args = { value: ethers.parseEther("0.01") }
+                    let tx = await cur_contract.openPacket(packet_id, args);
+                    let rc = await tx.wait();
+                    let event = rc.logs[rc.logs.length - 1];
+                    const [sender, prs, uris] = event.args;
+                    for (let l = 0; l < prs.length; l++) {
+                        prompts[cur_address][collection] = prs[l];
+                    }
+                }
+            }
+        }
+        console.log(prompts);
+    }
 
 
     return;

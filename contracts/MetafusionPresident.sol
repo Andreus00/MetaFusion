@@ -17,6 +17,7 @@ contract MetaFusionPresident {
     MetaCard   private metaCard;
 
     uint constant packetCost = 0.1 ether;
+    uint constant packetOpeningCost = 0.01 ether;
 
     string public baseURI = "https://metafusion.io/api/";  // The base URI for the metadata of packets, prompts and cards
 
@@ -109,6 +110,7 @@ contract MetaFusionPresident {
     }
 
     function openPacket(uint32 packetID) public payable {
+        require(msg.value >= packetOpeningCost, "You didn't send enought ethers!");
         // metaPacket.
         metaPacket.openPacket(msg.sender, packetID);
         // todo: call the oracle and get the prompts

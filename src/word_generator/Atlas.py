@@ -45,12 +45,13 @@ class WordExtractor(object):
                 "realistic": 400,
             },
         }
-        self.addCollection(1, test_collection[0])
+        self.addCollection(1, test_collection)
+        self.addCollection(2, test_collection)
     
     def addCollection(self, collection: int, prompts: Dict[str, int]):
         self.collections[collection] = prompts
 
-    def generate_prompt(self, index:int, collection_id: int, type_id: int, packet_id: int, prompt_id: int):
+    def generate_prompt(self, collection_id: int, type_id: int, prompt_id: int):
         '''
         Randomly get a prompt.
         '''
