@@ -10,6 +10,8 @@ const owner_priv_key: string = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266'
 const other_priv_key: string = '0x70997970C51812dc3A010C7d01b50e0d17dc79C8'
 const other2_priv_key: string = '0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC'
 
+const keys = [other_priv_key, other2_priv_key]
+
 const collections = [1, 2]
 
 var packets: { [user: string] : { [collection: number] : number[]} } = {};
@@ -156,29 +158,73 @@ async function connect(contractName: string) {
         await new Promise(r => setTimeout(r, 10000));
     }
 
+    function getRandomInt(max: number) {
+        return Math.floor(Math.random() * max);
+    }
+
     if (SIMULATE_IMAGE_CREATION){
         console.log("Creating images");
 
-        let collection = collections[0];
-        images[other_priv_key][collection] = []; // create list 
+        const TOT_IMAGES: number = 8;   // try to create 8 images. Random users, random collections. 
+                                        // If the user does not have characters in the collection, skip the image creation.
 
-        let myPrompts = prompts[other_priv_key][collection];
+        var freezed_prompts = new Set();
+        for (let c = 0; c < TOT_IMAGES; c++) {
+            let cur_collection = collections[getRandomInt(collections.length)];
+            let cur_user = getRandomInt(contracts.length);
+            let cur_key = keys[cur_user];
+            let cur_contract = contracts[cur_user];
+            if (images[cur_key][cur_collection] == undefined) {
+                images[cur_key][cur_collection] = [];
+            }
+            console.log(cur_key, cur_collection, cur_user);
+            let myPrompts = prompts[cur_key][cur_collection];
+            let usePrompts = [0, 0, 0, 0, 0, 0];
+            for (let i = 0; i < myPrompts.length; i++) {
+                if (freezed_prompts.has(myPrompts[i])) {
+                    continue;
+                }
+                let promptId = myPrompts[i];
+                let promptType = ((promptId >> 13) & 0x7);
+                usePrompts[promptType] = promptId;
+            }
+            
+            if (usePrompts[0] == 0) {
+                continue;
+            }
 
-        let usePrompts = [0, 0, 0, 0, 0, 0];
-        for (let i = 0; i < NUM_PROMPT_PER_IMAGE; i++) {
-          let promptId = myPrompts[i];
-          let promptType = ((promptId >> 13) & 0x7);
-          usePrompts[promptType] = promptId;
+            for (let i = 0; i < usePrompts.length; i++) {
+                freezed_prompts.add(usePrompts[i]);
+            }
+            console.log(usePrompts, cur_key, cur_collection);
+            
+            let tx = await cur_contract.createImage(usePrompts, { value: ethers.parseEther("0.1") })
+            let rc = await tx.wait();
+            let event = rc.logs[rc.logs.length - 1];
+            const [sender, cardId, uri] = event.args;
+            images[cur_key][cur_collection].push(cardId);
         }
 
-        console.log(usePrompts);
+        // let collection = collections[0];
+        // images[other_priv_key][collection] = []; // create list 
+
+        // let myPrompts = prompts[other_priv_key][collection];
+
+        // let usePrompts = [0, 0, 0, 0, 0, 0];
+        // for (let i = 0; i < NUM_PROMPT_PER_IMAGE; i++) {
+        //   let promptId = myPrompts[i];
+        //   let promptType = ((promptId >> 13) & 0x7);
+        //   usePrompts[promptType] = promptId;
+        // }
+
+        // console.log(usePrompts);
         
-        let tx = await contract_other.createImage(usePrompts, { value: ethers.parseEther("0.1") })
-        let rc = await tx.wait();
-        let event = rc.logs[rc.logs.length - 1];
-        const [sender, cardId, uri] = event.args;
-        let cur_address = await contract_other.runner?.getAddress();
-        images[cur_address][collection].push(cardId);
+        // let tx = await contract_other.createImage(usePrompts, { value: ethers.parseEther("0.1") })
+        // let rc = await tx.wait();
+        // let event = rc.logs[rc.logs.length - 1];
+        // const [sender, cardId, uri] = event.args;
+        // let cur_address = await contract_other.runner?.getAddress();
+        // images[cur_address][collection].push(cardId);
     }
 
     return;
