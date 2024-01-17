@@ -1,11 +1,11 @@
 import base58
-
+from typing import List
 
 def cidToInt256(cid):
     return int.from_bytes(base58.b58decode(cid)[2:], "big")
 
 def int256ToCid(int256):
-    return base58.b58encode(b"\x12\x20" + int.to_bytes(int256, 32, "big"))
+    return base58.b58encode(b"\x12\x20" + int.to_bytes(int256, 32, "big")).decode("utf-8")
     
 
 def from_int_to_hex_str(integer: int):
@@ -35,21 +35,26 @@ def getInfoFromPromptId(prompt_id: int) -> (int, int, int, int):
     collection = prompt_id & 0x1FFF
     return index, packet, type_id, collection
 
-def getInfoFromImageId(image_id: int) -> (int, int, int, int, int, int, int):
+def getPackedIdFromPromptId(prompt_id: int) -> int:
+    return prompt_id & 0x1fff1fff
+
+def getInfoFromImageId(image_id: int) -> (int, List[int]):
     '''
-    id int256:  ssss ssss ssss ssss ssss ssss ssss ssss
+    id int256:  iiip pppp pppp pppp tttc cccc cccc cccc
+                iiip pppp pppp pppp tttc cccc cccc cccc
+                iiip pppp pppp pppp tttc cccc cccc cccc
+                iiip pppp pppp pppp tttc cccc cccc cccc
+                iiip pppp pppp pppp tttc cccc cccc cccc
+                iiip pppp pppp pppp tttc cccc cccc cccc
                 ssss ssss ssss ssss ssss ssss ssss ssss
-                iiip pppp pppp pppp tttc cccc cccc cccc
-                iiip pppp pppp pppp tttc cccc cccc cccc
-                iiip pppp pppp pppp tttc cccc cccc cccc
-                iiip pppp pppp pppp tttc cccc cccc cccc
-                iiip pppp pppp pppp tttc cccc cccc cccc
-                iiip pppp pppp pppp tttc cccc cccc cccc
+                ssss ssss ssss ssss ssss ssss ssss ssss
     Return the seed (s), and all the six prompts.
     '''
-    seed = image_id >> 192
+    seed = image_id & 0xffffffffffffffff
     prompts = []
-    for i in range(6):
-        prompts.append(image_id >> (i*32) & 0xFFFFFFFF)
+    image_id = image_id >> 64
+    for _ in range(6):
+        prompts.append(image_id & 0xFFFFFFFF)
+        image_id = image_id >> 32
     
-    return seed, *prompts
+    return seed, prompts

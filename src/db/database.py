@@ -34,10 +34,10 @@ class CreateDatabase(object):
 		try:
 
 			cur = connection.cursor()
-			cur.execute("CREATE TABLE IF NOT EXISTS Packets(id VARCHAR(65) PRIMARY KEY, isListed BIT DEFAULT 0, price INT DEFAULT 1, userHex VARCHAR(65) NOT NULL);")
-			cur.execute("CREATE TABLE IF NOT EXISTS Prompts(id VARCHAR(65) PRIMARY KEY, ipfsHash VARCHAR(35), isListed BIT DEFAULT 0, price INT DEFAULT 1, BIT isFreezed DEFAULT 0, userHex VARCHAR(65) NOT NULL, name TEXT);")
-			cur.execute("CREATE TABLE IF NOT EXISTS Images(id VARCHAR(65) PRIMARY KEY, ipfsHash VARCHAR(35), isListed BIT DEFAULT 0, price INT DEFAULT 1, userHex VARCHAR(65) NOT NULL);")
-			cur.execute("CREATE TABLE IF NOT EXISTS SellEvents(id INTEGER PRIMARY KEY AUTOINCREMENT, objId VARCHAR(65), userFromHex VARCHAR(65) NOT NULL, userToHex VARCHAR(65) NOT NULL, price INT DEFAULT 0, type TINYINT CHECK(type IN (0, 1, 2)));") # 0 = Packet, 1 = Prompts, 2 = Images
+			cur.execute("CREATE TABLE IF NOT EXISTS Packets(id VARCHAR(67) PRIMARY KEY, isListed BIT DEFAULT 0, price VARCHAR(67), userHex VARCHAR(67) NOT NULL);")
+			cur.execute("CREATE TABLE IF NOT EXISTS Prompts(id VARCHAR(67) PRIMARY KEY, ipfsHash VARCHAR(47), isListed BIT DEFAULT 0, price VARCHAR(67), isFreezed BIT DEFAULT 0, userHex VARCHAR(67) NOT NULL, name TEXT);") #Add prompt type
+			cur.execute("CREATE TABLE IF NOT EXISTS Images(id VARCHAR(67) PRIMARY KEY, ipfsHash VARCHAR(47), isListed BIT DEFAULT 0, price VARCHAR(67), userHex VARCHAR(67) NOT NULL);") #Add collection id
+			cur.execute("CREATE TABLE IF NOT EXISTS SellEvents(id INTEGER PRIMARY KEY AUTOINCREMENT, objId VARCHAR(67), userFromHex VARCHAR(67) NOT NULL, userToHex VARCHAR(67) NOT NULL, price VARCHAR(67), type TINYINT CHECK(type IN (0, 1, 2)));") # 0 = Packet, 1 = Prompts, 2 = Images
 			cur.execute("CREATE INDEX IF NOT EXISTS userPacketsIndex ON Packets(userHex);")
 			cur.execute("CREATE INDEX IF NOT EXISTS userPromptsIndex ON Prompts(userHex);")
 			cur.execute("CREATE INDEX IF NOT EXISTS userImagesIndex ON Images(userHex);")

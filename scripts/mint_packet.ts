@@ -15,13 +15,20 @@ const collections = [1, 2]
 var packets: { [user: string] : { [collection: number] : number[]} } = {};
 packets[owner_priv_key] = {};
 packets[other_priv_key] = {};
+packets[other2_priv_key] = {};
 
 var prompts: { [user: string] : { [collection: number] : number[]} } = {};
 prompts[owner_priv_key] = {};
 prompts[other_priv_key] = {};
+prompts[other2_priv_key] = {};
+
+var images: {[user: string] : {[collections: number] : number[]}} = {}
+images[owner_priv_key] = {};
+images[other_priv_key] = {};
+images[other2_priv_key] = {};
 
 const FORGE_TOT_PACKETS = 3;
-
+const NUM_PROMPT_PER_IMAGE = 6;
 
 function genPKUUID(collection: number , idInCollection: number){
     return ((idInCollection) << (16)) | (collection)
@@ -32,7 +39,9 @@ async function connect(contractName: string) {
     const SIMULATE_PACKET_FORGE = true;
     const SIMULATE_PACKET_TRANSFER = true;
     const SIMULATE_PACKET_OPENING = true;
-    
+    const SIMULATE_IMAGE_CREATION = false;
+
+
     const wallet_owner = await ethers.getSigner(owner_priv_key);
     
     const wallet_other = await ethers.getSigner(other_priv_key);
@@ -46,8 +55,9 @@ async function connect(contractName: string) {
 
     const contract_owner = await ethers.getContractAt(contractName, contract_address, wallet_owner)
     const contract_other = await ethers.getContractAt(contractName, contract_address, wallet_other)
+    const contract_other_2 = await ethers.getContractAt(contractName, contract_address, wallet_other2)
 
-    const contracts = [contract_owner, contract_other]
+    const contracts = [contract_other, contract_other_2]
 
     if (SIMULATE_PACKET_FORGE) {
         for (let i = 0; i < collections.length; i++) {
@@ -78,39 +88,44 @@ async function connect(contractName: string) {
             }
         }
 
-        console.log(packets);
+        console.log(images);
     }
 
     // sleep
     await new Promise(r => setTimeout(r, 2500));
 
     if (SIMULATE_PACKET_TRANSFER) {
-        // seller lists packet for sale
-        let packet_id = packets[wallet_owner.address][collections[0]][0];
+        let seller = wallet_other;
+        let contract_seller = contract_other;
+        let buyer = wallet_other2;
+        let contract_buyer = contract_other_2;
 
-        let tx = await contract_owner.listPacket(packet_id);
+        // seller lists packet for sale
+        let packet_id = packets[seller.address][collections[0]][0];
+
+        let tx = await contract_seller.listPacket(packet_id);
         await tx.wait();
 
         // buyer calls the willToBuy
-        let tx2 = await contract_other.buyPacket(packet_id, args);
+        let tx2 = await contract_buyer.buyPacket(packet_id, args);
         await tx2.wait();
 
         // wait for the transfer to be completed
         await new Promise(r => setTimeout(r, 2500));
 
-        packets[wallet_owner.address][collections[0]].splice(0, 1);
-        packets[wallet_other.address][collections[0]].push(packet_id);
+        packets[seller.address][collections[0]].splice(0, 1);
+        packets[buyer.address][collections[0]].push(packet_id);
 
         // check the ownership on blockchain
-        let owner = await contract_owner.ownerOfPacket(packet_id);
+        let owner = await contract_seller.ownerOfPacket(packet_id);
         console.log('new owner: ', owner);
 
         // check the balance of the buyer and seller
-        let balance_owner = await wallet_owner.provider.getBalance(owner_priv_key);
-        console.log('balance_owner: ', balance_owner);
-
-        let balance_other = await wallet_owner.provider.getBalance(other_priv_key);
+        let balance_other = await seller.provider.getBalance(other_priv_key);
         console.log('balance_other: ', balance_other);
+
+        let balance_other_2 = await buyer.provider.getBalance(other2_priv_key);
+        console.log('balance_other_2: ', balance_other_2);
     }
 
 
@@ -136,6 +151,28 @@ async function connect(contractName: string) {
             }
         }
         console.log(prompts);
+    }
+
+    if (SIMULATE_IMAGE_CREATION){
+        let collection = collections[0];
+        images[other_priv_key][collection] = []; // create list 
+
+        let myPrompts = prompts[other_priv_key][collection];
+
+        let usePrompts = [0, 0, 0, 0, 0, 0];
+        for (let i = 0; i < NUM_PROMPT_PER_IMAGE; i++) {
+          let promptId = myPrompts[i];
+          let promptType = ((promptId >> 13) & 0x7);
+          usePrompts[promptType] = promptId;
+        }
+        
+        let tx = await contract_other.createImage(usePrompts)
+        let rc = await tx.wait();
+        let event = rc.logs[rc.logs.length - 1];
+        const [sender, cardId, uri] = event.args;
+        let cur_address = await contract_other.runner?.getAddress();
+        images[cur_address][collection].push(cardId);
+
     }
 
 

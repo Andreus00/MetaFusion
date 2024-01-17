@@ -36,7 +36,11 @@ contract MetaFusionPresident {
     event PromptTransfered(address indexed buyer, address indexed seller, uint256 id, uint256 value);
     event PacketTransfered(address indexed buyer, address indexed seller, uint256 id, uint256 value);
     event CardTransfered(address indexed buyer, address indexed seller, uint256 id, uint256 value);
-    
+    event UpdateListPrompt(uint32 id, uint256 price, bool isListed);
+    event UpdateListPacket(uint32 id, uint256 price, bool isListed);
+    event UpdateListImage(uint256 id, uint256 price, bool isListed);
+
+
     modifier onlyOwner() {
         require(msg.sender == owner, "Only the owner of the contract can perform this action!");
         _;
@@ -303,27 +307,33 @@ contract MetaFusionPresident {
         return metaCard.tokenURI(cardId);
     }
 
-    function listPrompt(uint32 promptId) public {
+    function listPrompt(uint32 promptId, uint256 price) public {
         metaPrompt.approve(address(this), promptId);
+        emit UpdateListPrompt(promptId, price, true);
     }
 
-    function listPacket(uint32 packetId) public {
+    function listPacket(uint32 packetId, uint256 price) public {
         metaPacket.approve(address(this), packetId);
+        emit UpdateListPacket(packetId, price, true);
     }
 
-    function listCard(uint256 cardId) public {
+    function listCard(uint256 cardId, uint256 price) public {
         metaCard.approve(address(this), cardId);
+        emit UpdateListImage(cardId, price, true);
     }
 
     function unlistPrompt(uint32 promptId) public {
         metaPrompt.approve(address(0), promptId);
+        emit UpdateListPrompt(promptId, 0, false);
     }
 
     function unlistPacket(uint32 packetId) public {
         metaPacket.approve(address(0), packetId);
+        emit UpdateListPacket(packetId, 0,  false);
     }
 
     function unlistCard(uint256 cardId) public {
         metaCard.approve(address(0), cardId);
+        emit UpdateListImage(cardId, 0, false);
     }
 }

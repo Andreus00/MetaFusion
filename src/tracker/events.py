@@ -3,7 +3,8 @@ from abc import abstractmethod, ABC
 from .data import Data, Packet, Image, Prompt
 from typing import List
 from .data import Data
-from ..utils.utils import from_int_to_hex_str, from_str_hex_to_int_str
+from ..utils.utils import *
+import json
 
 PACKET_SIZE = 8
 NUM_PROMPT_TYPES = 6
@@ -52,25 +53,21 @@ class PacketOpened(Event):
     def handle(self, contract, provider, IPFSClient, data: Data):
         '''
         Delete the packet burnt from the database and create the prompts without IPFS hash
-        ID: 0-12 collection
-        13-15 prompt type
-        16-28 packet id in collection
-        29-31 sequence number of the prompt in packet
-        [31, 30, 29, 28, 27, 26, 25, 24, 23, 22, ... , 3, 2, 1, 0]
         '''
         prompt = self.prompts[0]
-        # get collection id then
-        # get packet id in collection
-        packet_id = prompt & 0x1fff1fff
+        packet_id = getPackedIdFromPromptId(prompt)
         data.remove_packet_from(packet_id=packet_id, user_id=self.opener)
 
-        for prompt, uri in zip(self.prompts, self.uri):
-            # TODO: create prompt in the database
-            pass
+        for prompt in self.prompts:
+            p = Prompt()
+            p.initWithParams(id = prompt, 
+                             userIdHex = self.opener, 
+                             data = data)
+
 @dataclass
 class PromptCreated(Event):
-    opener: str
-    prompt: int
+    to: str
+    promptId: int
     IPFSCid: int
 
     def handle(self, contract, provider, IPFSClient, data: Data):
@@ -78,11 +75,19 @@ class PromptCreated(Event):
         Add the IPFS hash to the prompt in the database and the "name" of the prompt
         '''
         prompt = Prompt()
-        prompt_name = IPFSClient.http_client.get(self.IPFSCid)
-        prompt.initWithParams(self.prompt, hash=str(self.IPFSCid), 
-                    name=prompt_name, 
-                    userIdHex=self.opener, 
-                    data=data) #Not sure this is correct
+        textCid = int256ToCid(self.IPFSCid)
+        prompt_json = json.loads(IPFSClient.http_client.cat(textCid).decode("utf-8"))
+        name = prompt_json['name']
+        print("------------------")
+        print("Prompt:", self.promptId)
+        print("Name:", name)
+        print("CID:", textCid)
+        print("CID_int:", self.IPFSCid)
+        prompt.initWithParams(id = self.promptId, 
+                              hash = textCid, 
+                              name = name,
+                              userIdHex = self.to, 
+                              data = data)
 
 @dataclass
 class CreateImage(Event):
@@ -96,8 +101,7 @@ class CreateImage(Event):
         '''
 
         image = Image()
-        image.initWithParams(id=self.card, 
-                            userIdHex=from_int_to_hex_str(int(self.creator))) # Is this correct?
+        image.initWithParams(id=self.card, userIdHex=self.creator)
         image.writeToDb(data)
         return super().handle()
 
@@ -113,19 +117,12 @@ class ImageCreated(Event):
         '''
 
         image = Image()
-        image.initWithParams(id=self.card, 
-                            userIdHex=from_int_to_hex_str(int(self.creator),
-                            hash=None))
-        imageId = image.id >> 64
-        for _ in range(NUM_PROMPT_TYPES):
-            currentPromptId = imageId & 0xffffffff
-            
-            if currentPromptId != 0:
-                data.remove_prompt_from(prompt_id=currentPromptId, user_id=int(self.creator))
-
-
-            imageId = imageId >> 32
+        iamgeCid = int256ToCid(self.IPFSCid)
+        image.initWithParams(id=self.card, userIdHex=self.creator, hash=iamgeCid)
+        image.freezePrompts(data)
+        IPFSClient.download(iamgeCid, path=f"ipfs/images/{self.card}.png")
         return super().handle()
+
 
 @dataclass
 class WillToBuyEvent(Event):
@@ -183,6 +180,37 @@ class ImageTransfered(TransferEvent):
 
     def handle(self, contract, provider, IPFSClient, data: Data):
         data.transfer_image(self.id, self.seller, self.buyer)
+
+
+@dataclass 
+class UpdateNFT:
+    id: int
+    isListed: bool
+    price: int
+
+@dataclass
+class UpdateListPrompt(UpdateNFT):
+    def handle(self, contract, provider, IPFSClient, data: Data):
+        if self.isListed:
+            data.list_prompt(self.id, self.price)
+        else:
+            data.unlist_prompt(self.id)
+
+@dataclass
+class UpdateListPacket(UpdateNFT):
+    def handle(self, contract, provider, IPFSClient, data: Data):
+        if self.isListed:
+            data.list_packet(self.id, self.price)
+        else:
+            data.unlist_packet(self.id)
+
+@dataclass
+class UpdateListImage(UpdateNFT):
+    def handle(self, contract, provider, IPFSClient, data: Data):
+        if self.isListed:
+            data.list_image(self.id, self.price)
+        else:
+            data.unlist_image(self.id)
 
 
 def get_event_class(event_name):

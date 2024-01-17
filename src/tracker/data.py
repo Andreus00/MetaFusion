@@ -3,7 +3,7 @@ import sqlite3
 import base58
 import json
 import os
-from ..utils.utils import from_int_to_hex_str, from_str_hex_to_int_str
+from ..utils.utils import *
 from ..db.database import CreateDatabase, DatabaseConnection
 
 class Packet:
@@ -15,7 +15,7 @@ class Packet:
 	def initWithDb(self, res):
 		self.id = from_str_hex_to_int_str(res[0])
 		self.isListed = res[1]
-		self.price = res[2]
+		self.price = from_str_hex_to_int_str(res[2])
 		self.userIdHex = res[3]
 	def initWithParams(self, id, userIdHex: str, isListed: bool = False, price: int = 0, data=None):
 		self.id: int = id
@@ -27,9 +27,14 @@ class Packet:
 	
 	def writeToDb(self, data):
 		cur = data.get_cursor()
-		cur.execute('INSERT OR REPLACE INTO Packets(id, isListed, price, userHex) VALUES (?, ?, ?, ?)', (from_int_to_hex_str(self.id), self.isListed, self.price, self.userIdHex))
+		cur.execute('INSERT OR REPLACE INTO Packets(id, isListed, price, userHex) VALUES (?, ?, ?, ?)', (from_int_to_hex_str(self.id), self.isListed, from_int_to_hex_str(self.price), self.userIdHex))
 		data.con.commit()
 		cur.close()
+
+	def getIndexInCollection(self):
+		return getInfoFromPacketId(self.id)[0]
+	def getOriginalCollection(self):
+		return getInfoFromPacketId(self.id)[1]
 
 	def fromJson(self, data):
 		self.__dict__ = json.loads(data)
@@ -46,14 +51,14 @@ class Prompt:
 	name: str
 	
 	def initWithDb(self, res):
-		self.id = res[0]
+		self.id = from_str_hex_to_int_str(res[0])
 		self.hash = res[1]
 		self.isListed = res[2]
-		self.price = res[3]
+		self.price = from_str_hex_to_int_str(res[3])
 		self.isFreezed = res[4]
 		self.userIdHex = res[5]
 		self.name = res[6]
-	def initWithParams(self, id: int, hash: str, name: str, userIdHex: str, isListed: bool = False, price: int = 0, isFreezed: bool = False, data=None):
+	def initWithParams(self, id: int, userIdHex: str, hash: str = None, name: str = None, isListed: bool = False, price: int = 0, isFreezed: bool = False, data=None):
 		self.id: int = id
 		self.hash: str = hash   # IPFS hash
 		self.isListed: bool = isListed
@@ -66,9 +71,22 @@ class Prompt:
 
 	def writeToDb(self, data):
 		cur = data.get_cursor()
-		cur.execute('INSERT OR REPLACE INTO Prompts(id, ipfsHash, isListed, price, isFreezed, userHex, name) VALUES (?, ?, ?, ?, ? , ?, ?)', (from_int_to_hex_str(self.id), self.hash, self.isListed, self.price, self.isFreezed, self.userIdHex, self.name))
+		cur.execute('INSERT OR REPLACE INTO Prompts(id, ipfsHash, isListed, price, isFreezed, userHex, name) VALUES (?, ?, ?, ?, ? , ?, ?)', (from_int_to_hex_str(self.id), self.hash, self.isListed, from_int_to_hex_str(self.price), self.isFreezed, self.userIdHex, self.name))
 		data.con.commit()
 		cur.close()
+
+	def getPromptIndexInPacket(self):
+		return getInfoFromPromptId(self.id)[0]
+	def getOriginalPacketIndexInCollection(self):
+		return getInfoFromPromptId(self.id)[1]
+	def getType(self):
+		return getInfoFromPromptId(self.id)[2]
+	def getOriginalCollection(self):
+		return getInfoFromPromptId(self.id)[3]
+	def getPackedId(self):
+		return getPackedIdFromPromptId(self.id)
+	def getOriginalPacket(self, data):
+		return data.get_packet(self.getPackedId())
 	
 	def fromJson(self, data):
 		self.__dict__ = json.loads(data)
@@ -83,12 +101,12 @@ class Image:
 	userIdHex: str
 
 	def initWithDb(self, res):
-		self.id = res[0]
+		self.id = from_str_hex_to_int_str(res[0])
 		self.hash = res[1]
 		self.isListed = res[2]
-		self.price = res[3]
+		self.price = from_str_hex_to_int_str(res[3])
 		self.userIdHex = res[4]
-	def initWithParams(self, id, hash: str, userIdHex: str, isListed: bool = False, price: int = 0, data=None):
+	def initWithParams(self, id: int, userIdHex: str, hash: str = None, isListed: bool = False, price: int = 0, data=None):
 		self.id: int = id
 		self.hash: str = hash   # IPFS hash
 		self.isListed: bool = isListed
@@ -96,12 +114,47 @@ class Image:
 		self.userIdHex: str = userIdHex
 		if data is not None:
 			self.writeToDb(data)
+
+	def freezePrompts(self, data):
+		_, prompts = getInfoFromImageId(self.id)
+		for prompt in prompts:
+			if prompt != 0:
+				data.freeze_prompt(prompt_id=prompt)
+	def unfreezePrompts(self, data):
+		_, prompts = getInfoFromImageId(self.id)
+		for prompt in prompts:
+			if prompt != 0:
+				data.unfreeze_prompt(prompt_id=prompt)
 		
 	def writeToDb(self, data):
 		cur = data.get_cursor()
-		cur.execute('INSERT OR REPLACE INTO Images(id, ipfsHash, isListed, price, userHex) VALUES (?, ?, ?, ?, ?)', (from_int_to_hex_str(self.id), self.hash, self.isListed, self.price, self.userIdHex))
+		cur.execute('INSERT OR REPLACE INTO Images(id, ipfsHash, isListed, price, userHex) VALUES (?, ?, ?, ?, ?)', (from_int_to_hex_str(self.id), self.hash, self.isListed, from_int_to_hex_str(self.price), self.userIdHex))
 		data.con.commit()
 		cur.close()
+
+	def getPromptIndexInPacke_ofPrompt(self, promptNo):
+		return getInfoFromPromptId(self.id)[0]
+	
+	def getOriginalPacketIndexInCollection_ofPrompt(self, promptNo):
+		return getInfoFromPromptId(self.id)[1]
+	
+	def getType_ofPrompt(self, promptNo):
+		return getInfoFromPromptId(self.id)[2]
+	
+	def getOriginalCollection(self):
+		return getInfoFromPromptId(self.id)[3]
+	
+	def getPackedId_ofPrompt(self, promptNo):
+		return getPackedIdFromPromptId(self.id)
+	
+	def getSeed(self):
+		return getInfoFromImageId(self.id)[0]
+
+	def getOriginalPacket_ofPrompt(self, data, promptNo):
+		return data.get_packet(getPackedIdFromPromptId(getInfoFromImageId(self.id)[0][promptNo]))
+	
+	def getPrompt(self, data, promptNo):
+		return data.get_prompt(getInfoFromImageId(self.id)[0][promptNo])
 	
 	def fromJson(self, data):
 		self.__dict__ = json.loads(data)
@@ -293,7 +346,8 @@ class Data:
 	def list_packet(self, packet_id: int, price: int):
 		cur = self.get_cursor()
 		try:
-			cur.execute('UPDATE Packets SET isListed = 1, price = ? WHERE id = ?', (price, from_int_to_hex_str(packet_id),))
+			cur.execute('UPDATE Packets SET isListed = 1, price? WHERE id = ?', 
+				(from_int_to_hex_str(packet_id), from_int_to_hex_str(price)))
 			self.con.commit()
 			return True
 		finally:
@@ -302,7 +356,7 @@ class Data:
 	def list_prompt(self, prompt_id: int, price: int):
 		cur = self.get_cursor()
 		try:
-			cur.execute('UPDATE Prompts SET isListed = 1, price = ? WHERE id = ?', (price, from_int_to_hex_str(prompt_id),))
+			cur.execute('UPDATE Prompts SET isListed = 1, price=? WHERE id = ?', (from_int_to_hex_str(prompt_id),from_int_to_hex_str(price)))
 			self.con.commit()
 			return True
 		finally:
@@ -311,7 +365,7 @@ class Data:
 	def list_image(self, image_id: int, price: int):
 		cur = self.get_cursor()
 		try:
-			cur.execute('UPDATE Images SET isListed = 1, price = ? WHERE id = ?', (price, from_int_to_hex_str(image_id),))
+			cur.execute('UPDATE Images SET isListed = 1, price=? WHERE id = ?', (from_int_to_hex_str(image_id),from_int_to_hex_str(price)))
 			self.con.commit()
 			return True
 		finally:
@@ -354,16 +408,26 @@ class Data:
 		finally:
 			cur.close()
 
-	def remove_prompt_from(self, prompt_id: int, user_id: str):
+	def freeze_prompt(self, prompt_id: int):
 		cur = self.get_cursor()
 		try:
-			cur.execute('DELETE FROM Prompts WHERE id=? and userHex=?', (from_int_to_hex_str(prompt_id), user_id),)
+			cur.execute('UPDATE FROM Prompts SET isFreezed=1, isListed=0 WHERE id=?', (from_int_to_hex_str(prompt_id)),)
+			self.con.commit()
+			return True
+		finally:
+			cur.close()
+	def unfreeze_prompt(self, prompt_id: int):
+		cur = self.get_cursor()
+		try:
+			cur.execute('UPDATE FROM Prompts SET isFreezed=0 WHERE id=?', (from_int_to_hex_str(prompt_id)),)
 			self.con.commit()
 			return True
 		finally:
 			cur.close()
 
 	def remove_image_from(self, image_id: int, user_id: str):
+		img = self.get_image(image_id)
+		img.unfreezePrompts(self)
 		cur = self.get_cursor()
 		try:
 			cur.execute('DELETE FROM Images WHERE id=? and userHex=?', (from_int_to_hex_str(image_id.id), user_id),)
@@ -451,25 +515,25 @@ class Data:
 		finally:
 			cur.close()
 		
-	# def fromJson(self, data):
-	# 	obj = json.loads(data)
-	# 	for k, v in obj:
-	# 		if(k.startswith("user_to_")):
-	# 			self.__dict__[k] = v
-	# 		else:
-	# 			o = {}
-	# 			for k1, v1 in v:
-	# 				obj = None
-	# 				if("packet" in k):
-	# 					obj = Packet()
-	# 				elif("prompt" in k):
-	# 					obj = Prompt()
-	# 				elif("image" in k):
-	# 					obj = Image()
-	# 				if(obj != None):
-	# 					obj.__dict__ = v1
-	# 					o[k1] = obj
-	# 			self.__dict__[k] = o
-	# def toJson(self):
-	# 	data = {k: (v if k.startswith("user_to_") else {k1: v1.__dict__ for k1, v1 in v}) for k, v in self.__dict__}
-	# 	return json.dumps(data, sort_keys=True)
+	def fromJson(self, data):
+		obj = json.loads(data)
+		for k, v in obj:
+			if(k.startswith("user_to_")):
+				self.__dict__[k] = v
+			else:
+				o = {}
+				for k1, v1 in v:
+					obj = None
+					if("packet" in k):
+						obj = Packet()
+					elif("prompt" in k):
+						obj = Prompt()
+					elif("image" in k):
+						obj = Image()
+					if(obj != None):
+						obj.__dict__ = v1
+						o[k1] = obj
+				self.__dict__[k] = o
+	def toJson(self):
+		data = {k: (v if k.startswith("user_to_") else {k1: v1.__dict__ for k1, v1 in v}) for k, v in self.__dict__}
+		return json.dumps(data, sort_keys=True)

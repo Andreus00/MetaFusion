@@ -5,6 +5,8 @@ from ..word_generator import Atlas
 from ..utils import utils
 import os
 import json
+import io
+from PIL import Image
 
 PACKET_SIZE = 8
 word_generator = Atlas.WordExtractor()
@@ -29,7 +31,6 @@ class PacketOpened(Event):
         '''
         Generate and add prompt on IPFS
         '''
-
         for prompt, uri in zip(self.prompts, self.uri):
             _, packet, type_id, collection = utils.getInfoFromPromptId(prompt)
 
@@ -37,22 +38,29 @@ class PacketOpened(Event):
 
             random_prompt = word_generator.generate_prompt(collection, type_id, prompt)
 
-            file_name = f"{prompt}.json"
-            path = f"ipfs/packet/{file_name}"
-            with open(path, "w+") as f:
-                data = {
-                    "prompt": random_prompt,
-                    "id": prompt,
-                    "uri": uri,
-                    "collection": collection,
-                    "type": type_id,
-                }
-                json.dump(data, f)
+            #file_name = f"{prompt}.json"
+            #path = f"ipfs/prompt/{file_name}"
+            #with open(path, "w+") as f:
+            data = {
+                "name": random_prompt,
+                "id": prompt,
+                "uri": uri,
+                "collection": collection,
+                "type": type_id,
+            }
+            #    json.dump(data, f)
 
             # push the prompt on IPFS
-            cid = IPFSClient.publish(path)
+            cid = IPFSClient.http_client.add_bytes(json.dumps(data).encode("utf-8"))
+            #cid = IPFSClient.publish(path)
 
             cid_int = utils.cidToInt256(cid)
+
+            print("------------------")
+            print("Prompt:", prompt)
+            print("Name:", random_prompt)
+            print("CID:", cid)
+            print("CID_int:", cid_int)
             
             # call the function
             call_func = contract.functions.promptMinted(**{
@@ -64,7 +72,6 @@ class PacketOpened(Event):
                                         "from": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
                                         "nonce": provider.eth.get_transaction_count("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"),
                                     })
-            
             # sign the transaction
             signed_tx = provider.eth.account.sign_transaction(call_func, private_key="0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80")
 
@@ -89,43 +96,32 @@ class CreateImage(Event):
         seed, character_id, hat_id, tool_id, color_id, eyes_id, style_id = utils.getInfoFromImageId(self.card)
 
         with open(f"ipfs/prompt/{character_id}.json") as f:
-            character = json.load(f)["prompt"]
+            character = json.load(f)["name"]
         with open(f"ipfs/prompt/{hat_id}.json") as f:
-            hat = json.load(f)["prompt"]
+            hat = json.load(f)["name"]
         with open(f"ipfs/prompt/{tool_id}.json") as f:
-            tool = json.load(f)["prompt"]
+            tool = json.load(f)["name"]
         with open(f"ipfs/prompt/{color_id}.json") as f:
-            color = json.load(f)["prompt"]
+            color = json.load(f)["name"]
         with open(f"ipfs/prompt/{eyes_id}.json") as f:
-            eyes = json.load(f)["prompt"]
+            eyes = json.load(f)["name"]
         with open(f"ipfs/prompt/{style_id}.json") as f:
-            style = json.load(f)["prompt"]
+            style = json.load(f)["name"]
 
         prompt = f"a 3d {character} with {hat}, {color}, {tool} in his hand, {eyes}, upper bust, {style}, 4k, frontal view"
 
-        image = model(prompt=prompt).images[0]
-
-        file_name = f"{self.card}.json"
-        path = f"ipfs/image/{file_name}"
-
-        with open(path, "w+") as f:
-            data = {
-                "prompt": prompt,
-                "id": self.card,
-                "character": character,
-                "hat": hat,
-                "tool": tool,
-                "color": color,
-                "eyes": eyes,
-                "style": style,
-                "uri": self.uri,
-                "seed": seed,
-                "image": image,
-            }
-            json.dump(data, f)
-        
-        # push the image on IPFS
-        cid = IPFSClient.publish(path)
+        image: Image = model(prompt=prompt).images[0]
+        img_byte_arr = io.BytesIO()
+        image.save(img_byte_arr, format='PNG')
+        img_byte = img_byte_arr.getvalue()
+        try:
+            # push the image on IPFS
+            cid = IPFSClient.http_client.add_bytes(img_byte)
+        except Exception as e:
+            print(e)
+        finally:
+            img_byte_arr.flush()
+            img_byte_arr.close()
 
         # publish the cid on the blockchain
         contract.imageMinted(cid, self.card, self.creator)
