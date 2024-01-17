@@ -4,7 +4,7 @@ import base58
 import json
 import os
 from ..utils.utils import *
-from ..db.database import CreateDatabase, DatabaseConnection
+from .database import CreateDatabase, DatabaseConnection
 
 class Packet:
 	id: int
@@ -27,7 +27,7 @@ class Packet:
 	
 	def writeToDb(self, data):
 		cur = data.get_cursor()
-		cur.execute('INSERT OR REPLACE INTO Packets(id, isListed, price, userHex) VALUES (?, ?, ?, ?)', (from_int_to_hex_str(self.id), self.isListed, from_int_to_hex_str(self.price), self.userIdHex))
+		cur.execute('INSERT OR REPLACE INTO Packets(id, isListed, price, userHex, collectionId) VALUES (?, ?, ?, ?, ?)', (from_int_to_hex_str(self.id), self.isListed, from_int_to_hex_str(self.price), self.userIdHex, self.getOriginalCollection()))
 		data.con.commit()
 		cur.close()
 
@@ -71,7 +71,7 @@ class Prompt:
 
 	def writeToDb(self, data):
 		cur = data.get_cursor()
-		cur.execute('INSERT OR REPLACE INTO Prompts(id, ipfsHash, isListed, price, isFreezed, userHex, name) VALUES (?, ?, ?, ?, ? , ?, ?)', (from_int_to_hex_str(self.id), self.hash, self.isListed, from_int_to_hex_str(self.price), self.isFreezed, self.userIdHex, self.name))
+		cur.execute('INSERT OR REPLACE INTO Prompts(id, ipfsHash, isListed, price, isFreezed, userHex, name, collectionId, type) VALUES (?, ?, ?, ?, ? , ?, ?, ?, ?)', (from_int_to_hex_str(self.id), self.hash, self.isListed, from_int_to_hex_str(self.price), self.isFreezed, self.userIdHex, self.name, self.getOriginalCollection(), self.getType()))
 		data.con.commit()
 		cur.close()
 
@@ -128,33 +128,28 @@ class Image:
 		
 	def writeToDb(self, data):
 		cur = data.get_cursor()
-		cur.execute('INSERT OR REPLACE INTO Images(id, ipfsHash, isListed, price, userHex) VALUES (?, ?, ?, ?, ?)', (from_int_to_hex_str(self.id), self.hash, self.isListed, from_int_to_hex_str(self.price), self.userIdHex))
+		cur.execute('INSERT OR REPLACE INTO Images(id, ipfsHash, isListed, price, userHex, collectionId) VALUES (?, ?, ?, ?, ?, ?)', (from_int_to_hex_str(self.id), self.hash, self.isListed, from_int_to_hex_str(self.price), self.userIdHex, self.getOriginalCollection()))
 		data.con.commit()
 		cur.close()
 
 	def getPromptIndexInPacke_ofPrompt(self, promptNo):
-		return getInfoFromPromptId(self.id)[0]
-	
+		return getInfoFromPromptId(self.getPromptId(promptNo))[0]
 	def getOriginalPacketIndexInCollection_ofPrompt(self, promptNo):
-		return getInfoFromPromptId(self.id)[1]
-	
+		return getInfoFromPromptId(self.getPromptId(promptNo))[1]
 	def getType_ofPrompt(self, promptNo):
-		return getInfoFromPromptId(self.id)[2]
-	
+		return getInfoFromPromptId(self.getPromptId(promptNo))[2]
 	def getOriginalCollection(self):
-		return getInfoFromPromptId(self.id)[3]
-	
+		return getInfoFromPromptId(self.getPromptId(0))[3]
 	def getPackedId_ofPrompt(self, promptNo):
-		return getPackedIdFromPromptId(self.id)
-	
+		return getPackedIdFromPromptId(self.getPromptId(promptNo))
+	def getPromptId(self, promptNo):
+		return getInfoFromImageId(self.id)[1][promptNo]
 	def getSeed(self):
 		return getInfoFromImageId(self.id)[0]
-
 	def getOriginalPacket_ofPrompt(self, data, promptNo):
-		return data.get_packet(getPackedIdFromPromptId(getInfoFromImageId(self.id)[0][promptNo]))
-	
+		return data.get_packet(getPackedIdFromPromptId(self.getPromptId(promptNo)))
 	def getPrompt(self, data, promptNo):
-		return data.get_prompt(getInfoFromImageId(self.id)[0][promptNo])
+		return data.get_prompt(self.getPromptId(promptNo))
 	
 	def fromJson(self, data):
 		self.__dict__ = json.loads(data)
@@ -164,11 +159,12 @@ class Image:
 
 
 class Data:
-	def __init__(self):
-		self.con = DatabaseConnection()
+	def __init__(self, create_db: bool = False):
+		self.con = DatabaseConnection(create_db)
 		
-		cd = CreateDatabase(self.con)
-		cd.create()
+		if create_db:
+			cd = CreateDatabase(self.con)
+			cd.create()
 		
 
 	def get_cursor(self):
@@ -346,7 +342,7 @@ class Data:
 	def list_packet(self, packet_id: int, price: int):
 		cur = self.get_cursor()
 		try:
-			cur.execute('UPDATE Packets SET isListed = 1, price? WHERE id = ?', 
+			cur.execute('UPDATE Packets SET isListed = 1, price = ? WHERE id = ?', 
 				(from_int_to_hex_str(packet_id), from_int_to_hex_str(price)))
 			self.con.commit()
 			return True
@@ -356,7 +352,7 @@ class Data:
 	def list_prompt(self, prompt_id: int, price: int):
 		cur = self.get_cursor()
 		try:
-			cur.execute('UPDATE Prompts SET isListed = 1, price=? WHERE id = ?', (from_int_to_hex_str(prompt_id),from_int_to_hex_str(price)))
+			cur.execute('UPDATE Prompts SET isListed = 1, price = ? WHERE id = ?', (from_int_to_hex_str(prompt_id), from_int_to_hex_str(price)))
 			self.con.commit()
 			return True
 		finally:
@@ -365,7 +361,7 @@ class Data:
 	def list_image(self, image_id: int, price: int):
 		cur = self.get_cursor()
 		try:
-			cur.execute('UPDATE Images SET isListed = 1, price=? WHERE id = ?', (from_int_to_hex_str(image_id),from_int_to_hex_str(price)))
+			cur.execute('UPDATE Images SET isListed = 1, price = ? WHERE id = ?', (from_int_to_hex_str(image_id), from_int_to_hex_str(price)))
 			self.con.commit()
 			return True
 		finally:
@@ -402,7 +398,7 @@ class Data:
 	def remove_packet_from(self, packet_id: int, user_id: str):
 		cur = self.get_cursor()
 		try:
-			cur.execute('DELETE FROM Packets WHERE id=? and userHex=?', (from_int_to_hex_str(packet_id), user_id),)
+			cur.execute('DELETE FROM Packets WHERE id=? and userHex=?', (from_int_to_hex_str(packet_id), user_id))
 			self.con.commit()
 			return True
 		finally:
@@ -411,7 +407,8 @@ class Data:
 	def freeze_prompt(self, prompt_id: int):
 		cur = self.get_cursor()
 		try:
-			cur.execute('UPDATE FROM Prompts SET isFreezed=1, isListed=0 WHERE id=?', (from_int_to_hex_str(prompt_id)),)
+			print("FREEZING PROMPT: ", prompt_id, "...")
+			cur.execute('UPDATE Prompts SET isFreezed=1, isListed=0 WHERE id=?', (from_int_to_hex_str(prompt_id),))
 			self.con.commit()
 			return True
 		finally:
@@ -419,7 +416,7 @@ class Data:
 	def unfreeze_prompt(self, prompt_id: int):
 		cur = self.get_cursor()
 		try:
-			cur.execute('UPDATE FROM Prompts SET isFreezed=0 WHERE id=?', (from_int_to_hex_str(prompt_id)),)
+			cur.execute('UPDATE Prompts SET isFreezed=0 WHERE id=?', (from_int_to_hex_str(prompt_id),))
 			self.con.commit()
 			return True
 		finally:
@@ -430,7 +427,7 @@ class Data:
 		img.unfreezePrompts(self)
 		cur = self.get_cursor()
 		try:
-			cur.execute('DELETE FROM Images WHERE id=? and userHex=?', (from_int_to_hex_str(image_id.id), user_id),)
+			cur.execute('DELETE FROM Images WHERE id=? and userHex=?', (from_int_to_hex_str(image_id.id), user_id))
 			self.con.commit()
 			return True
 		finally:

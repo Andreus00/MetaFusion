@@ -42,7 +42,7 @@ class WordExtractor(object):
                 "futuristic": 100,
                 "samurai": 200,
                 "anime": 300,
-                "realistic": 400,
+                "steampunk": 400,
             },
         }
         self.addCollection(1, test_collection)

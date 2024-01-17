@@ -122,7 +122,7 @@ contract MetaPrompt is ERC721 {
          */
         // first check if the ether sent is enough
         // then check that the sender owns all the prompts
-        
+        require(_prompts[0] != 0, "Character prompt is missing!");
         uint8 invalidPrompts = 0;
         for (uint8 i = 0; i < NUM_PROMPT_TYPES; i++) {
             // if the prompt is 0, then it is not used

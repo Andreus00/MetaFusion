@@ -8,7 +8,7 @@ from .event_handler import handle_event, initTrackerFilters
 import ipfs_api
 import os
 import multiaddr
-from .data import Data
+from ..db.data import Data
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +61,7 @@ def initContract(contract_cfg, provider):
     return contract
 
 def initData(contract, filters):
-    return Data()
+    return Data(create_db=True)
 
 
 def loop(provider, contract, filters, IPFSClient, data, cfg):

@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 from abc import abstractmethod, ABC
-from .data import Data, Packet, Image, Prompt
+from ..db.data import Data, Packet, Image, Prompt
 from typing import List
-from .data import Data
+from ..db.data import Data
 from ..utils.utils import *
 import json
 
@@ -92,7 +92,7 @@ class PromptCreated(Event):
 @dataclass
 class CreateImage(Event):
     creator: str
-    card: int
+    cardId: int
     uri: str
 
     def handle(self, contract, provider, IPFSClient, data: Data):
@@ -101,27 +101,24 @@ class CreateImage(Event):
         '''
 
         image = Image()
-        image.initWithParams(id=self.card, userIdHex=self.creator)
+        image.initWithParams(id=self.cardId, userIdHex=self.creator)
         image.writeToDb(data)
-        return super().handle()
 
 @dataclass
 class ImageCreated(Event):
     creator: str
-    card: int
+    imageId: int
     IPFSCid: int
 
     def handle(self, contract, provider, IPFSClient, data: Data):
         '''
         address indexed creator, uint256 prompts, string uri
         '''
-
         image = Image()
-        iamgeCid = int256ToCid(self.IPFSCid)
-        image.initWithParams(id=self.card, userIdHex=self.creator, hash=iamgeCid)
+        imageCid = int256ToCid(self.IPFSCid)
+        image.initWithParams(id=self.imageId, userIdHex=self.creator, hash=imageCid, data=data)
         image.freezePrompts(data)
-        IPFSClient.download(iamgeCid, path=f"ipfs/images/{self.card}.png")
-        return super().handle()
+        IPFSClient.download(imageCid, path=f"ipfs/image/{self.imageId}.png")
 
 
 @dataclass
@@ -183,7 +180,7 @@ class ImageTransfered(TransferEvent):
 
 
 @dataclass 
-class UpdateNFT:
+class UpdateNFT(Event):
     id: int
     isListed: bool
     price: int

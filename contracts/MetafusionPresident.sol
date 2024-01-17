@@ -28,7 +28,7 @@ contract MetaFusionPresident {
     event PacketForged(address indexed blacksmith, uint32 packetId);
     event PacketOpened(address indexed opener, uint32[] prompts, string[] uri);
     event PromptCreated(uint256 IPFSCid, uint32 promptId, address to);
-    event CreateImage(address indexed creator, uint256 prompts, string uri);
+    event CreateImage(address indexed creator, uint256 cardId, string uri);
     event ImageCreated(uint256 IPFSCid, uint256 imageId, address indexed creator);
     event WillToBuyPacket(address buyer, address seller, uint256 id, uint256 value);
     event WillToBuyPrompt(address buyer, address seller, uint256 id, uint256 value);
@@ -157,7 +157,7 @@ contract MetaFusionPresident {
         return merged;
     }
 
-    function createImage(uint32[NUM_PROMPT_TYPES] memory prompts) public payable returns (uint256){
+    function createImage(uint32[NUM_PROMPT_TYPES] memory prompts) public payable {
         require(prompts.length == NUM_PROMPT_TYPES, string(abi.encodePacked("You shall pass the exact number of prompts: ", NUM_PROMPT_TYPES)));
         require(msg.value >= GENERATION_COST, "Not enough ether sent!");
         uint32[] memory prompts_array = new uint32[](NUM_PROMPT_TYPES);
@@ -175,11 +175,9 @@ contract MetaFusionPresident {
         metaPrompt.removePromts(prompts_array, msg.sender);
         // emit event
         emit CreateImage(msg.sender, cardId, uri);
-
-        return cardId;
     }
 
-    function imageMinted(uint256 IPFSCid, uint32 imageId, address to) public onlyOwner {
+    function imageMinted(uint256 IPFSCid, uint256 imageId, address to) public onlyOwner {
         emit ImageCreated(IPFSCid, imageId, to);
     }
 

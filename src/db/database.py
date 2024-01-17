@@ -4,8 +4,8 @@ from typing import Any
 import os
 
 class DatabaseConnection(object):
-	def __init__(self) -> None:
-		if os.path.exists("tracker.db"):
+	def __init__(self, wipe_db = False) -> None:
+		if wipe_db and os.path.exists("tracker.db"):
 			os.remove("tracker.db")
 		con = sqlite3.connect("tracker.db")
 		self.con = con
@@ -34,9 +34,9 @@ class CreateDatabase(object):
 		try:
 
 			cur = connection.cursor()
-			cur.execute("CREATE TABLE IF NOT EXISTS Packets(id VARCHAR(67) PRIMARY KEY, isListed BIT DEFAULT 0, price VARCHAR(67), userHex VARCHAR(67) NOT NULL);")
-			cur.execute("CREATE TABLE IF NOT EXISTS Prompts(id VARCHAR(67) PRIMARY KEY, ipfsHash VARCHAR(47), isListed BIT DEFAULT 0, price VARCHAR(67), isFreezed BIT DEFAULT 0, userHex VARCHAR(67) NOT NULL, name TEXT);") #Add prompt type
-			cur.execute("CREATE TABLE IF NOT EXISTS Images(id VARCHAR(67) PRIMARY KEY, ipfsHash VARCHAR(47), isListed BIT DEFAULT 0, price VARCHAR(67), userHex VARCHAR(67) NOT NULL);") #Add collection id
+			cur.execute("CREATE TABLE IF NOT EXISTS Packets(id VARCHAR(67) PRIMARY KEY, isListed BIT DEFAULT 0, price VARCHAR(67), userHex VARCHAR(67) NOT NULL, collectionId INTEGER);")
+			cur.execute("CREATE TABLE IF NOT EXISTS Prompts(id VARCHAR(67) PRIMARY KEY, ipfsHash VARCHAR(47), isListed BIT DEFAULT 0, price VARCHAR(67), isFreezed BIT DEFAULT 0, userHex VARCHAR(67) NOT NULL, name TEXT, type TINYINT DEFAULT 128, collectionId INTEGER);")
+			cur.execute("CREATE TABLE IF NOT EXISTS Images(id VARCHAR(67) PRIMARY KEY, ipfsHash VARCHAR(47), isListed BIT DEFAULT 0, price VARCHAR(67), userHex VARCHAR(67) NOT NULL, collectionId INTEGER);")
 			cur.execute("CREATE TABLE IF NOT EXISTS SellEvents(id INTEGER PRIMARY KEY AUTOINCREMENT, objId VARCHAR(67), userFromHex VARCHAR(67) NOT NULL, userToHex VARCHAR(67) NOT NULL, price VARCHAR(67), type TINYINT CHECK(type IN (0, 1, 2)));") # 0 = Packet, 1 = Prompts, 2 = Images
 			cur.execute("CREATE INDEX IF NOT EXISTS userPacketsIndex ON Packets(userHex);")
 			cur.execute("CREATE INDEX IF NOT EXISTS userPromptsIndex ON Prompts(userHex);")

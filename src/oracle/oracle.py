@@ -11,19 +11,18 @@ import sqlite3
 import ipfs_api
 import os
 import multiaddr
-from ..tracker.data import Data
+from ..db.data import Data
 from ..word_generator import Atlas
+import torch
 
 logger = logging.getLogger(__name__)
 
 
 def initModel(model_cfg):
-    model = hydra.utils.call(model_cfg)
+    model = hydra.utils.call(model_cfg.from_pretrained, torch_dtype=torch.float16)
+    model.to(model_cfg.device)
     logger.info("Model instantiated.")
     return model
-
-def initDBConnection(db_cfg):
-	return hydra.utils.call(db_cfg)
 
 def instantiateProvider(provider_cfg):
     provider: web3.Web3 = hydra.utils.instantiate(provider_cfg)
@@ -74,23 +73,25 @@ def initContract(contract_cfg, provider):
     )
     return contract
 
-def loop(provider, contract, filters, IPFSClient, model, con, cfg):
+def loop(provider, contract, filters, IPFSClient, model, data, cfg):
     num_events_found = 0
     while True:
         for filter in filters:
             for event in filter.get_new_entries():
                 num_events_found += 1
-                handle_event(event, provider, contract, IPFSClient, model, con)
+                handle_event(event, provider, contract, IPFSClient, model, data)
         time.sleep(cfg.poll_interval)
         logger.info(f"Events found: {num_events_found}")
 
+def initData():
+    return Data()
 
 @hydra.main(config_path="../../conf", config_name="oracle_config")
 def main(cfg):
     # create the model
     model = initModel(cfg.model)
 
-    con = initDBConnection(cfg.db)
+    data = initData()
 
     # connect to IPFS
     IPFSClient = instantiateIPFS(cfg.ipfs)
@@ -102,7 +103,7 @@ def main(cfg):
 
     filters = initOracleFilters(contract)
 
-    loop(provider, contract, filters, IPFSClient, model, con, cfg)
+    loop(provider, contract, filters, IPFSClient, model, data, cfg)
 
 if __name__ == "__main__":
     main()

@@ -14,6 +14,8 @@ db:
   _target_: sqlite3.connect
   database: tracker.db
 model:
-  _target_: diffusers.AutoPipelineForText2Image.from_pretrained
-  pretrained_model_or_path: stabilityai/sdxl-turbo
-  cache_dir: ./cache/models/
+  from_pretrained:
+    _target_: diffusers.AutoPipelineForText2Image.from_pretrained
+    pretrained_model_or_path: stabilityai/sdxl-turbo
+    cache_dir: ./cache/models/
+  device: cuda

@@ -27,7 +27,7 @@ images[owner_priv_key] = {};
 images[other_priv_key] = {};
 images[other2_priv_key] = {};
 
-const FORGE_TOT_PACKETS = 3;
+const FORGE_TOT_PACKETS = 6;
 const NUM_PROMPT_PER_IMAGE = 6;
 
 function genPKUUID(collection: number , idInCollection: number){
@@ -39,7 +39,7 @@ async function connect(contractName: string) {
     const SIMULATE_PACKET_FORGE = true;
     const SIMULATE_PACKET_TRANSFER = true;
     const SIMULATE_PACKET_OPENING = true;
-    const SIMULATE_IMAGE_CREATION = false;
+    const SIMULATE_IMAGE_CREATION = true;
 
 
     const wallet_owner = await ethers.getSigner(owner_priv_key);
@@ -103,7 +103,7 @@ async function connect(contractName: string) {
         // seller lists packet for sale
         let packet_id = packets[seller.address][collections[0]][0];
 
-        let tx = await contract_seller.listPacket(packet_id);
+        let tx = await contract_seller.listPacket(packet_id, ethers.parseEther("0.1"));
         await tx.wait();
 
         // buyer calls the willToBuy
@@ -137,6 +137,7 @@ async function connect(contractName: string) {
                 let cur_contract = contracts[j];
                 let cur_address = await cur_contract.runner?.getAddress();
                 let cur_packets = packets[cur_address][collection];
+                prompts[cur_address][collection] = [];
                 for (let k = 0; k < cur_packets.length; k++) {
                     let packet_id =cur_packets[k];
                     let args = { value: ethers.parseEther("0.01") }
@@ -145,15 +146,19 @@ async function connect(contractName: string) {
                     let event = rc.logs[rc.logs.length - 1];
                     const [sender, prs, uris] = event.args;
                     for (let l = 0; l < prs.length; l++) {
-                        prompts[cur_address][collection] = prs[l];
+                        prompts[cur_address][collection].push(Number(prs[l]));
                     }
                 }
             }
         }
         console.log(prompts);
+
+        await new Promise(r => setTimeout(r, 10000));
     }
 
     if (SIMULATE_IMAGE_CREATION){
+        console.log("Creating images");
+
         let collection = collections[0];
         images[other_priv_key][collection] = []; // create list 
 
@@ -165,19 +170,18 @@ async function connect(contractName: string) {
           let promptType = ((promptId >> 13) & 0x7);
           usePrompts[promptType] = promptId;
         }
+
+        console.log(usePrompts);
         
-        let tx = await contract_other.createImage(usePrompts)
+        let tx = await contract_other.createImage(usePrompts, { value: ethers.parseEther("0.1") })
         let rc = await tx.wait();
         let event = rc.logs[rc.logs.length - 1];
         const [sender, cardId, uri] = event.args;
         let cur_address = await contract_other.runner?.getAddress();
         images[cur_address][collection].push(cardId);
-
     }
 
-
     return;
-
 }
 
 

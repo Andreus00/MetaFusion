@@ -7,6 +7,9 @@ import os
 import json
 import io
 from PIL import Image
+from ..db.data import Data
+
+from ..word_generator.prompt_builder import Prompt
 
 PACKET_SIZE = 8
 word_generator = Atlas.WordExtractor()
@@ -17,7 +20,7 @@ class Event(ABC):
     event: str
 
     @abstractmethod
-    def handle(self, contract, provider, IPFSClient, model, con):
+    def handle(self, contract, provider, IPFSClient, model, data):
         pass
         
 
@@ -27,7 +30,7 @@ class PacketOpened(Event):
     prompts: List[int]
     uri: List[str]  # uri of prompts
 
-    def handle(self, contract, provider, IPFSClient, model, con):
+    def handle(self, contract, provider, IPFSClient, model, data):
         '''
         Generate and add prompt on IPFS
         '''
@@ -86,45 +89,67 @@ class PacketOpened(Event):
 @dataclass
 class CreateImage(Event):
     creator: str
-    card: int
+    cardId: int
     uri: str
 
-    def handle(self, contract, provider, IPFSClient, model, con):
+    def handle(self, contract, provider, IPFSClient, model, data: Data):
         '''
         Generate and image and add it to IPFS
         '''
-        seed, character_id, hat_id, tool_id, color_id, eyes_id, style_id = utils.getInfoFromImageId(self.card)
+        seed, (style_id, eyes_id, color_id, tool_id, hat_id, character_id) = utils.getInfoFromImageId(self.cardId)
 
-        with open(f"ipfs/prompt/{character_id}.json") as f:
-            character = json.load(f)["name"]
-        with open(f"ipfs/prompt/{hat_id}.json") as f:
-            hat = json.load(f)["name"]
-        with open(f"ipfs/prompt/{tool_id}.json") as f:
-            tool = json.load(f)["name"]
-        with open(f"ipfs/prompt/{color_id}.json") as f:
-            color = json.load(f)["name"]
-        with open(f"ipfs/prompt/{eyes_id}.json") as f:
-            eyes = json.load(f)["name"]
-        with open(f"ipfs/prompt/{style_id}.json") as f:
-            style = json.load(f)["name"]
+        print(character_id, hat_id, tool_id, color_id, eyes_id, style_id)
 
-        prompt = f"a 3d {character} with {hat}, {color}, {tool} in his hand, {eyes}, upper bust, {style}, 4k, frontal view"
+
+        # read the names from the db
+
+        character = data.get_prompt(character_id)
+        hat = data.get_prompt(hat_id)
+        tool = data.get_prompt(tool_id)
+        color = data.get_prompt(color_id)
+        eyes = data.get_prompt(eyes_id)
+        style = data.get_prompt(style_id)
+
+        prompt = Prompt().set_character(character)\
+                    .set_hat(hat)\
+                    .set_tool(tool)\
+                    .set_color(color)\
+                    .set_eyes(eyes)\
+                    .set_style(style)\
+                    .build()
 
         image: Image = model(prompt=prompt).images[0]
         img_byte_arr = io.BytesIO()
         image.save(img_byte_arr, format='PNG')
         img_byte = img_byte_arr.getvalue()
-        try:
-            # push the image on IPFS
-            cid = IPFSClient.http_client.add_bytes(img_byte)
-        except Exception as e:
-            print(e)
-        finally:
-            img_byte_arr.flush()
-            img_byte_arr.close()
+
+        # push the image on IPFS
+        cid = IPFSClient.http_client.add_bytes(img_byte)
+
+        img_byte_arr.flush()
+        img_byte_arr.close()
 
         # publish the cid on the blockchain
-        contract.imageMinted(cid, self.card, self.creator)
+        # contract.imageMinted(cid, self.cardId, self.creator)
+        cid_int = utils.cidToInt256(cid)
+
+        call_func = contract.functions.imageMinted(**{
+                                        "IPFSCid": cid_int,
+                                        "imageId": self.cardId,
+                                        "to": self.creator, 
+                                        })\
+                                    .build_transaction({
+                                        "from": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+                                        "nonce": provider.eth.get_transaction_count("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"),
+                                    })
+        # sign the transaction
+        signed_tx = provider.eth.account.sign_transaction(call_func, private_key="0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80")
+
+        # send the transaction
+        send_tx = provider.eth.send_raw_transaction(signed_tx.rawTransaction)
+
+        # wait for transaction receipt
+        tx_receipt = provider.eth.wait_for_transaction_receipt(send_tx)
 
 @dataclass
 class WillToBuyEvent(Event):
@@ -140,50 +165,50 @@ class WillToBuyEvent(Event):
 @dataclass
 class WillToBuyPacket(WillToBuyEvent):
     
-    def handle(self, contract, provider, IPFSClient, model, con):
+    def handle(self, contract, provider, IPFSClient, model, data: Data):
         '''
         Pay the seller and send the packet to the buyer
         '''
-        cur = con.cursor()
-        try:
-            # get the packet price
-            print(self.id)
-            cur.execute(f"SELECT price FROM packets WHERE id=?", (utils.from_int_to_hex_str(self.id),))
-            price = cur.fetchone()[0]
-            print(price)
+        # cur = con.cursor()
+        # get the packet price
+        # print(self.id)
+        # cur.execute(f"SELECT price FROM packets WHERE id=?", (utils.from_int_to_hex_str(self.id),))
+        # price = cur.fetchone()[0]
+        # print(price)
+
+
+        price = data.get_packet(self.id).price
+        
+        # check if the buyer sent enough money
+        if self.value >= price:
+            # execute the transfer
+
+            # call the function
+            call_func = contract.functions.transferPacket(**{"buyer": self.buyer, "seller": self.seller, "packetId": self.id, "val": price})\
+                            .build_transaction({
+                                "from": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+                                "nonce": provider.eth.get_transaction_count("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"),
+                            })
             
-            # check if the buyer sent enough money
-            if self.value >= price:
-                # execute the transfer
+            # sign the transaction
+            signed_tx = provider.eth.account.sign_transaction(call_func, private_key="0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80")
 
-                # call the function
-                call_func = contract.functions.transferPacket(**{"buyer": self.buyer, "seller": self.seller, "packetId": self.id, "val": price})\
-                                .build_transaction({
-                                    "from": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-                                    "nonce": provider.eth.get_transaction_count("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"),
-                                })
-                
-                # sign the transaction
-                signed_tx = provider.eth.account.sign_transaction(call_func, private_key="0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80")
+            # send the transaction
+            send_tx = provider.eth.send_raw_transaction(signed_tx.rawTransaction)
 
-                # send the transaction
-                send_tx = provider.eth.send_raw_transaction(signed_tx.rawTransaction)
-
-                # wait for transaction receipt
-                tx_receipt = provider.eth.wait_for_transaction_receipt(send_tx)
-                
-                
-                # contract.transferPacket(self.buyer, self.seller, self.id, price)
-            else:
-                # refund the buyer
-                contract.refund(self.buyer, self.value)
-        finally:
-            cur.close()
+            # wait for transaction receipt
+            tx_receipt = provider.eth.wait_for_transaction_receipt(send_tx)
+            
+            
+            # contract.transferPacket(self.buyer, self.seller, self.id, price)
+        else:
+            # refund the buyer
+            contract.refund(self.buyer, self.value)
 
 @dataclass
 class WillToBuyPrompt(WillToBuyEvent):
     
-    def handle(self, contract, provider, IPFSClient, model, con):
+    def handle(self, contract, provider, IPFSClient, model, data):
         '''
         Pay the seller and send the packet to the buyer
         '''
@@ -208,7 +233,7 @@ class WillToBuyPrompt(WillToBuyEvent):
 @dataclass
 class WillToBuyImage(WillToBuyEvent):
     
-    def handle(self, contract, provider, IPFSClient, model, con):
+    def handle(self, contract, provider, IPFSClient, model, data):
         '''
         Pay the seller and send the packet to the buyer
         '''
