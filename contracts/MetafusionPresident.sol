@@ -9,44 +9,56 @@ import "./Card.sol";
 
 contract MetaFusionPresident {
 
-    address private oracle;  // the oracle
+
+    /////////////// VARIABLES ///////////////
+
     address immutable private owner;  // the owner of the contract
 
     MetaPrompt private metaPrompt;
     MetaPacket private metaPacket;
     MetaCard   private metaCard;
 
-    uint constant packetCost = 0.1 ether;
-    uint constant packetOpeningCost = 0.01 ether;
+    uint256 constant PACKET_COST = 0.1 ether;
+    uint256 constant PACKET_OPENING_FEES = 0.01 ether;
+    uint256 constant GENERATION_FEES = 0.1 ether;  // The cost of generating an image
+    uint256 constant DESTRUCTION_FEES = 0.001 ether;  // The fees for image destruction
+    uint256 constant TRANSACTION_FEES = 0.01 ether;  // The fees for the transaction
 
     uint8 public constant NUM_PROMPT_TYPES = 6;  // The number of different prompt types
     uint8 public constant PACKET_SIZE = 8;  // The number of different prompt types
-    uint256 private constant GENERATION_COST = 0.1 ether;  // The cost of generating an image
+
+    /////////////// EVENTS ///////////////
 
     event PacketForged(address indexed blacksmith, uint32 packetId);
-    event PacketOpened(address indexed opener, uint32[] prompts, string[] uri);
+    event PacketOpened(address indexed opener, uint32[] prompts);
+
     event PromptCreated(uint256 IPFSCid, uint32 promptId, address to);
-    event CreateImage(address indexed creator, uint256 cardId, string uri);
+    
+    event CreateImage(address indexed creator, uint256 cardId);
     event ImageCreated(uint256 IPFSCid, uint256 imageId, address indexed creator);
     event DestroyImage(uint256 imageId, address indexed userId);
+    
     event WillToBuyPacket(address buyer, address seller, uint256 id, uint256 value);
     event WillToBuyPrompt(address buyer, address seller, uint256 id, uint256 value);
     event WillToBuyImage(address buyer, address seller, uint256 id, uint256 value);
+    
     event PromptTransfered(address indexed buyer, address indexed seller, uint256 id, uint256 value);
     event PacketTransfered(address indexed buyer, address indexed seller, uint256 id, uint256 value);
     event CardTransfered(address indexed buyer, address indexed seller, uint256 id, uint256 value);
+    
     event UpdateListPrompt(uint32 id, uint256 price, bool isListed);
     event UpdateListPacket(uint32 id, uint256 price, bool isListed);
     event UpdateListImage(uint256 id, uint256 price, bool isListed);
 
+    /////////////// MODIFIERS ///////////////
 
     modifier onlyOwner() {
         require(msg.sender == owner, "Only the owner of the contract can perform this action!");
         _;
     }
 
-    modifier checkPacketCost() {
-        require(msg.value >= packetCost, "You didn't send enought ethers!");
+    modifier checkCost(uint256 cost) {
+        require(msg.value >= cost, "You didn't send enought ethers!");
         _;
     }
 
@@ -65,16 +77,23 @@ contract MetaFusionPresident {
         _;
     }
 
+    modifier isOwnerOf(uint256 tokenId, ERC721 meta) {
+        require(meta.ownerOf(tokenId) == msg.sender, "You are not the owner of the token!");
+        _;
+    }
+
+    /////////////// CONSTRUCTOR ///////////////
 
     constructor() { // The name and symbol of the token
-        oracle = msg.sender;    // I still don't know how to use the oracle
         owner = msg.sender;    // The owner of the contract is the one who deployed it
 
         // create the meta contracts
-        metaPacket = new MetaPacket(PACKET_SIZE);
+        metaPacket = new MetaPacket();
         metaPrompt = new MetaPrompt(NUM_PROMPT_TYPES);
         metaCard = new MetaCard();
     }
+
+    /////////////// FUNCTIONS ///////////////
 
     function ownerOfPacket(uint256 _tokenId) public view returns (address) {
         return metaPacket.ownerOf(_tokenId);
@@ -100,7 +119,7 @@ contract MetaFusionPresident {
         return metaPacket.checkCollectionExistence(collection);        
     }
 
-    function forgePacket(uint16 collection) public payable checkPacketCost{
+    function forgePacket(uint16 collection) public payable checkCost(PACKET_COST) {
         // Forge a metaPacket.
         uint32 packetUUid = metaPacket.mint(msg.sender, collection);
         emit PacketForged(msg.sender, packetUUid);
@@ -112,13 +131,11 @@ contract MetaFusionPresident {
         return shiftedPromptIndex | shiftedPromptType | packetID;  // safe until we use less than 8192 packets per collection and less then 8192 collections
     }
 
-    function openPacket(uint32 packetID) public payable {
-        require(msg.value >= packetOpeningCost, "You didn't send enought ethers!");
+    function openPacket(uint32 packetID) public payable checkCost(PACKET_OPENING_FEES){
         // metaPacket.
-        metaPacket.openPacket(msg.sender, packetID);
+        metaPacket.openPacket(packetID);
 
         uint32[] memory prompts = new uint32[](PACKET_SIZE);
-        string[] memory uris = new string[](PACKET_SIZE);
         for (uint8 i = 0; i < PACKET_SIZE; i++) {
             
             uint256 idhash = uint256(keccak256(abi.encodePacked(packetID, i, block.timestamp)));
@@ -128,10 +145,9 @@ contract MetaFusionPresident {
 
             metaPrompt.mint(msg.sender, promptId);
             prompts[i] = promptId;
-            uris[i] = metaPrompt.tokenURI(promptId);
         }
 
-        emit PacketOpened(msg.sender, prompts, uris);
+        emit PacketOpened(msg.sender, prompts);
     }
 
     function promptMinted(uint256 IPFSCid, uint32 promptId, address to) public onlyOwner {
@@ -145,9 +161,8 @@ contract MetaFusionPresident {
         return merged;
     }
 
-    function createImage(uint32[NUM_PROMPT_TYPES] memory prompts) public payable {
+    function createImage(uint32[NUM_PROMPT_TYPES] memory prompts) public payable checkCost(GENERATION_FEES) {
         require(prompts.length == NUM_PROMPT_TYPES, string(abi.encodePacked("You shall pass the exact number of prompts: ", NUM_PROMPT_TYPES)));
-        require(msg.value >= GENERATION_COST, "Not enough ether sent!");
         uint32[] memory prompts_array = new uint32[](NUM_PROMPT_TYPES);
         for (uint32 i = 0; i < NUM_PROMPT_TYPES; i++) {
             uint32 prompt_id = prompts[i];
@@ -158,19 +173,15 @@ contract MetaFusionPresident {
         // mint the card
         uint256 mergedPrompts = _mergePrompts(prompts);
         uint256 cardId = metaCard.mint(msg.sender, mergedPrompts);
-        string memory uri = metaCard.tokenURI(cardId);
-        // remove the prompts from the user's list
-        // metaPrompt.removePromts(prompts_array, msg.sender);
         // emit event
-        emit CreateImage(msg.sender, cardId, uri);
+        emit CreateImage(msg.sender, cardId);
     }
 
     function imageMinted(uint256 IPFSCid, uint256 imageId, address to) public onlyOwner {
         emit ImageCreated(IPFSCid, imageId, to);
     }
 
-    function burnImageAndRecoverPrompts(uint256 imageId) public {
-        require(metaCard.ownerOf(imageId) == msg.sender, "You are not the image owner");
+    function burnImageAndRecoverPrompts(uint256 imageId) public payable checkCost(DESTRUCTION_FEES) isOwnerOf(imageId, metaCard){
         metaCard.destroyCard(imageId);
         uint256 imageIdShifted = imageId >> 64; //remove seed
         for(uint8 i = 0; i < NUM_PROMPT_TYPES; i++){
@@ -194,7 +205,7 @@ contract MetaFusionPresident {
     function buyPacket(uint32 packetId) public payable isPacketListed(packetId) {
         // this function registers the will of the buyer to buy a listed packet
         address seller = metaPacket.ownerOf(packetId);
-        emit WillToBuyPacket(msg.sender, seller, packetId, msg.value);
+        emit WillToBuyPacket(msg.sender, seller, packetId, msg.value - TRANSACTION_FEES);
     }
 
     /**
@@ -206,7 +217,7 @@ contract MetaFusionPresident {
     function buyPrompt(uint32 promptId) public payable isPromptListed(promptId) {
         // this function registers the will of the buyer to buy a listed prompt
         address seller = metaPrompt.ownerOf(promptId);
-        emit WillToBuyPrompt(msg.sender, seller, promptId, msg.value);
+        emit WillToBuyPrompt(msg.sender, seller, promptId, msg.value - TRANSACTION_FEES);
     }
 
     /**
@@ -218,7 +229,7 @@ contract MetaFusionPresident {
     function buyCard(uint256 cardId) public payable isCardListed(cardId) {
         // this function registers the will of the buyer to buy a listed card
         address seller = metaCard.ownerOf(cardId);
-        emit WillToBuyImage(msg.sender, seller, cardId, msg.value);
+        emit WillToBuyImage(msg.sender, seller, cardId, msg.value - TRANSACTION_FEES);
     }
 
     /**

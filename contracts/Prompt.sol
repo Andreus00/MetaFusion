@@ -28,7 +28,6 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
  *  */
 contract MetaPrompt is ERC721 {
 
-    address private minter;  // the oracle
     address private owner;  // the owner of the contract
 
     uint32 public immutable NUM_PROMPT_TYPES;  // The number of different prompt types
@@ -40,20 +39,9 @@ contract MetaPrompt is ERC721 {
         _;
     }
 
-	modifier onlyMinter() {
-        require(msg.sender == minter, "You're not the minter!");
-        _;
-    }
-
     constructor(uint32 _NUM_PROMPT_TYPES) ERC721("MetaPrompt", "PRM") { // The name and symbol of the token
-        minter = msg.sender;    // I still don't know how to use the oracle
         owner = msg.sender;    // The owner of the contract is the one who deployed it
         NUM_PROMPT_TYPES = _NUM_PROMPT_TYPES;
-    }
-
-    function setOracle(address _oracle) public onlyOwner {
-        // The owner of the contract is the only one who can set the oracle.
-        minter = _oracle;
     }
 
     /**
@@ -61,16 +49,16 @@ contract MetaPrompt is ERC721 {
      * @param to The address of the receiver
      * @param id The hash of the prompt (keccak256(prompt + "series number"))
      */
-    function mint(address to, uint32 id) public onlyMinter {
+    function mint(address to, uint32 id) public onlyOwner {
         // The oracle is the only one who can mint new prompts.
         _safeMint(to, uint256(id));
     }
 
-    function getCollectionId(uint32 promptId) public pure returns (uint16){
+    function _getCollectionId(uint32 promptId) private pure returns (uint16){
         return uint16(promptId & 0x1fff);
     }
 
-    function getPromptType(uint32 promptId) public pure returns (uint8){
+    function _getPromptType(uint32 promptId) private pure returns (uint8){
         return uint8((promptId >> 13) & 0x7);
     }
 
@@ -85,11 +73,11 @@ contract MetaPrompt is ERC721 {
         uint8 invalidPrompts = 0;
         for (uint8 i = 0; i < NUM_PROMPT_TYPES; i++) {
             // if the prompt is 0, then it is not used
-            uint16 collectionId = getCollectionId(_prompts[0]);
+            uint16 collectionId = _getCollectionId(_prompts[0]);
             if (_prompts[i] != 0) {
                 require(promptOwner == ownerOf(_prompts[i]), "Only the owner of the prompts can create an image!");
-                require(getCollectionId(_prompts[i]) == collectionId, "The prompts must belong to the same collection!");
-                require(getPromptType(_prompts[i]) == i, "The prompts must be of the correct type!");
+                require(_getCollectionId(_prompts[i]) == collectionId, "The prompts must belong to the same collection!");
+                require(_getPromptType(_prompts[i]) == i, "The prompts must be of the correct type!");
             }
             else {
                 invalidPrompts++;
@@ -105,8 +93,7 @@ contract MetaPrompt is ERC721 {
     	}	
     }
 
-
-	function approve(address to, uint256 tokenId) public virtual override onlyOwner {
+	function approve(address to, uint256 tokenId) public override onlyOwner {
         _approve(to, tokenId, tx.origin);
     }
 }

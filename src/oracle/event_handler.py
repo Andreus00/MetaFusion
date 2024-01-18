@@ -39,7 +39,6 @@ def handle_event(event, provider, contract, IPFSClient, model, data, logger):
                 'blockNumber': 13}
                 )
     '''
-    print(f"Handle: {event.event}")
     event_name = event.event
     event_args = event.args
 

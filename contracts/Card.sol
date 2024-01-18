@@ -22,14 +22,6 @@
 pragma solidity ^0.8.19;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "./Prompt.sol";
-/*
-struct ImageMetadata {
-    uint256 seed;
-    uint[5] prompts;
-    bool is_finalized;
-}
-*/
 
 /**
  * CARD ENCODING
@@ -42,7 +34,6 @@ struct ImageMetadata {
 
 contract MetaCard is ERC721 {
 
-    address private minter;  // the oracle
     address private owner;  // the owner of the contract; alias president
     
     string public baseURI = "https://metafusion.io/api/card/";  // The base URI for the metadata of the cards
@@ -52,22 +43,16 @@ contract MetaCard is ERC721 {
         _;
     }
 
-	modifier onlyMinter() {
-        require(msg.sender == minter, "You're not the minter!");
-        _;
-    }
-
     constructor() ERC721("MetaCard", "MCD") { // The name and symbol of the token
-        minter = msg.sender;    // I still don't know how to use the oracle
         owner = msg.sender;    // The owner of the contract is the one who deployed it
     }
 
 
-    function destroyCard(uint256 imageId) payable public onlyOwner{
+    function destroyCard(uint256 imageId) public onlyOwner{
         _burn(imageId);
     }
 
-    function mint(address to, uint256 cardPrompts) public onlyMinter returns(uint256) {
+    function mint(address to, uint256 cardPrompts) public onlyOwner returns(uint256) {
         // The oracle is the only one who can mint new cards.
         // calculate the 64 bits of the seed
         uint256 seed = uint256(keccak256(abi.encodePacked(cardPrompts, block.timestamp)));
@@ -80,7 +65,7 @@ contract MetaCard is ERC721 {
 
 
 
-	function approve(address to, uint256 tokenId) public virtual override onlyOwner {
+	function approve(address to, uint256 tokenId) public override onlyOwner {
         _approve(to, tokenId, tx.origin);
     }
 }

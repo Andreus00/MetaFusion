@@ -71,7 +71,7 @@ def loop(provider, contract, filters, IPFSClient, data, cfg):
                 try:
                     handle_event(event, provider, contract, IPFSClient, data, logger)
                 except Exception as e:
-                    print(f"Error handling event {idx}: {e}")
+                    logger.warning(f"Error handling event {idx}: {e}\nWhile handling event: {event}")
         time.sleep(cfg.poll_interval)
 
 

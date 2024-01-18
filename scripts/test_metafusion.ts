@@ -82,7 +82,16 @@ async function connect(contractName: string) {
 
     // connect to contract as owner and forge collection
 
-    let args = { value: ethers.parseEther("0.1") }
+    let packet_cost = ethers.parseEther("0.1");
+    let packet_opening_fees = ethers.parseEther("0.01");
+    let image_gen_fees = ethers.parseEther("0.1");
+    let image_destruction_fees = ethers.parseEther("0.001");
+    let transaction_fees = ethers.parseEther("0.01");
+    
+    let packet_transf_cost = ethers.parseEther("0.1");
+    let prompt_transf_cost = ethers.parseEther("0.01");
+    let image_transf_cost = ethers.parseEther("1.0");
+    
 
     const contract_owner = await ethers.getContractAt(contractName, contract_address, wallet_owner)
     const contract_other = await ethers.getContractAt(contractName, contract_address, wallet_other)
@@ -115,7 +124,7 @@ async function connect(contractName: string) {
                 for (let k = 0; k < FORGE_TOT_PACKETS; k++) {
                     tot_packets++;
                     let packID = genPKUUID(collection, tot_packets)
-                    let tx = await cur_contract.forgePacket(collection, args)
+                    let tx = await cur_contract.forgePacket(collection, { value: packet_cost})
                     await tx.wait();
                     packets[cur_address][collection].push(packID);
                 }
@@ -158,11 +167,11 @@ async function connect(contractName: string) {
             let collection = collections[(collections.length - 1) % (i + 1)];
             let packet_id = packets[seller.address][collection][i];
 
-            let tx = await contract_seller.listPacket(packet_id, ethers.parseEther("0.1"));
+            let tx = await contract_seller.listPacket(packet_id, packet_transf_cost);
             await tx.wait();
 
             // buyer calls the willToBuy
-            let tx2 = await contract_buyer.buyPacket(packet_id, args);
+            let tx2 = await contract_buyer.buyPacket(packet_id, { value: packet_transf_cost + transaction_fees});
             await tx2.wait();
 
             // wait for the transfer to be completed
@@ -201,8 +210,7 @@ async function connect(contractName: string) {
                 prompts[cur_address][collection] = [];
                 for (let k = 0; k < cur_packets.length; k++) {
                     let packet_id =cur_packets[k];
-                    let args = { value: ethers.parseEther("0.01") }
-                    let tx = await cur_contract.openPacket(packet_id, args);
+                    let tx = await cur_contract.openPacket(packet_id, { value: packet_opening_fees });
                     let rc = await tx.wait();
                     let event = rc.logs[rc.logs.length - 1];
                     const [sender, prs, uris] = event.args;
@@ -248,10 +256,10 @@ async function connect(contractName: string) {
             let collection = collections[(collections.length - 1) % (i + 1)];
             let prompt_id = prompts[seller.address][collection][i];
 
-            let tx = await contract_seller.listPrompt(prompt_id, args["value"]);
+            let tx = await contract_seller.listPrompt(prompt_id, prompt_transf_cost);
             await tx.wait();
 
-            let tx2 = await contract_buyer.buyPrompt(prompt_id, args);
+            let tx2 = await contract_buyer.buyPrompt(prompt_id, { value: prompt_transf_cost + transaction_fees});
             await tx2.wait();
 
             await new Promise(r => setTimeout(r, 2500));
@@ -310,7 +318,7 @@ async function connect(contractName: string) {
             }
             console.log(usePrompts, cur_key, cur_collection);
             
-            let tx = await cur_contract.createImage(usePrompts, { value: ethers.parseEther("0.1") })
+            let tx = await cur_contract.createImage(usePrompts, { value: image_gen_fees })
             let rc = await tx.wait();
             let event = rc.logs[rc.logs.length - 1];
             const [sender, cardId, uri] = event.args;
@@ -335,10 +343,10 @@ async function connect(contractName: string) {
         let collection = collections[0];
         let image_id = images[seller.address][collection][0];
         console.log(images);
-        let tx = await contract_seller.listCard(image_id, ethers.parseEther('2.0'));
+        let tx = await contract_seller.listCard(image_id, image_transf_cost);
         await tx.wait();
 
-        tx = await contract_buyer.buyCard(image_id, { value: ethers.parseEther('2.0')});
+        tx = await contract_buyer.buyCard(image_id, { value: image_transf_cost + transaction_fees});
         await tx.wait();
 
 
@@ -372,7 +380,7 @@ async function connect(contractName: string) {
         for (let i = 0; i < collections.length; i++) {
 
             let key = other_priv_key;
-            let collection = i;
+            let collection = collections[i];
             contract = contract_other;
             image_id = images[key][collection][0];
     
@@ -388,7 +396,7 @@ async function connect(contractName: string) {
             break;
         }
 
-        let tx = await contract.burnImageAndRecoverPrompts(image_id);
+        let tx = await contract.burnImageAndRecoverPrompts(image_id, { value: image_destruction_fees });
         await tx.wait();
 
         await waitUserInput();

@@ -43,7 +43,6 @@ class Event(ABC):
 class PacketForged(Event):
     blacksmith: str
     packetId: int
-    # uri: str
 
     def handle(self, contract, provider, IPFSClient, data: Data):
         '''
@@ -57,7 +56,6 @@ class PacketForged(Event):
 class PacketOpened(Event):
     opener: str
     prompts: List[int]
-    uri: List[str]  # uri of prompts 
 
     def handle(self, contract, provider, IPFSClient, data: Data):
         '''
@@ -97,11 +95,10 @@ class PromptCreated(Event):
 class CreateImage(Event):
     creator: str
     cardId: int
-    uri: str
 
     def handle(self, contract, provider, IPFSClient, data: Data):
         '''
-        address indexed creator, uint256 prompts, string uri
+        address indexed creator, uint256 prompts
         '''
 
         image = Image()
@@ -116,7 +113,7 @@ class ImageCreated(Event):
 
     def handle(self, contract, provider, IPFSClient, data: Data):
         '''
-        address indexed creator, uint256 prompts, string uri
+        address indexed creator, uint256 prompts
         '''
         image = Image()
         imageCid = int256ToCid(self.IPFSCid)
@@ -138,9 +135,6 @@ class DestroyImage(Event):
         image.unfreezePrompts(data)
         IPFSClient.unpin(image.hash)
         image.deleteFromDb(data)
-
-
-
 
 
 @dataclass

@@ -73,14 +73,14 @@ def initContract(contract_cfg, provider):
     )
     return contract
 
-def loop(provider, contract, filters, IPFSClient, model, data, cfg, logger):
+def loop(provider, contract, filters, IPFSClient, model, data, cfg):
     while True:
         for filter in filters:
             for idx, event in enumerate(filter.get_new_entries()):
                 try:
                     handle_event(event, provider, contract, IPFSClient, model, data, logger)
                 except Exception as e:
-                    print(f"Error handling event {idx}: {e}")
+                    logger.warning(f"Error handling event {idx}: {e}\nWhile handling event: {event}")
         time.sleep(cfg.poll_interval)
         
 
@@ -104,7 +104,7 @@ def main(cfg):
 
     filters = initOracleFilters(contract)
 
-    loop(provider, contract, filters, IPFSClient, model, data, cfg, logger)
+    loop(provider, contract, filters, IPFSClient, model, data, cfg)
 
 if __name__ == "__main__":
     main()

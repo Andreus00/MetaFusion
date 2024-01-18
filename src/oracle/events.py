@@ -35,13 +35,12 @@ class Event(ABC):
 class PacketOpened(Event):
     opener: str
     prompts: List[int]
-    uri: List[str]  # uri of prompts
 
     def handle(self, contract, provider, IPFSClient, model, data):
         '''
         Generate and add prompt on IPFS
         '''
-        for prompt, uri in zip(self.prompts, self.uri):
+        for prompt in self.prompts:
             _, packet, type_id, collection = utils.getInfoFromPromptId(prompt)
 
             print(hex(int(prompt)), collection, type_id, packet)
@@ -54,7 +53,6 @@ class PacketOpened(Event):
             data = {
                 "name": random_prompt,
                 "id": prompt,
-                "uri": uri,
                 "collection": collection,
                 "type": type_id,
             }
@@ -97,7 +95,6 @@ class PacketOpened(Event):
 class CreateImage(Event):
     creator: str
     cardId: int
-    uri: str
 
     def handle(self, contract, provider, IPFSClient, model, data: Data):
         '''
@@ -168,6 +165,27 @@ class WillToBuyEvent(Event):
     id: str
     value: int
 
+    def refund(self, contract, provider):
+        '''
+        Refund the buyer
+        '''
+
+        call_func = contract.functions.refund(**{"buyer": self.buyer,  "value": self.value})\
+                            .build_transaction({
+                                "from": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+                                "nonce": provider.eth.get_transaction_count("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"),
+                            })
+            
+        # sign the transaction
+        signed_tx = provider.eth.account.sign_transaction(call_func, private_key="0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80")
+
+        # send the transaction
+        send_tx = provider.eth.send_raw_transaction(signed_tx.rawTransaction)
+
+        # wait for transaction receipt
+        tx_receipt = provider.eth.wait_for_transaction_receipt(send_tx)
+            
+
 
 @dataclass
 class WillToBuyPacket(WillToBuyEvent):
@@ -210,7 +228,7 @@ class WillToBuyPacket(WillToBuyEvent):
             # contract.transferPacket(self.buyer, self.seller, self.id, price)
         else:
             # refund the buyer
-            contract.refund(self.buyer, self.value)
+            self.refund(contract, provider)
 
 @dataclass
 class WillToBuyPrompt(WillToBuyEvent):
@@ -247,7 +265,7 @@ class WillToBuyPrompt(WillToBuyEvent):
             
         else:
             # refund the buyer
-            contract.refund(self.buyer, self.value)
+            self.refund(contract, provider)
 
 
 @dataclass
@@ -285,7 +303,7 @@ class WillToBuyImage(WillToBuyEvent):
 
         else:
             # refund the buyer
-            contract.refund(self.buyer, self.value)
+            self.refund(contract, provider)
 
 
 def get_event_class(event_name):
