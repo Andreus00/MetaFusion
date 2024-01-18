@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import List, Dict
 from random import choice
+import hashlib
 
 
 class WordExtractor(object):
@@ -60,7 +61,7 @@ class WordExtractor(object):
         prompt_type = collection[type_id]
 
         possible_prompts = list(prompt_type.keys())
-        extracted_index = hash(prompt_id) % len(possible_prompts)
+        extracted_index = int(hashlib.sha256(f"{prompt_id}".encode("utf-8")).hexdigest(), 16) % len(possible_prompts)
         prompt = possible_prompts[extracted_index]
 
         prompt_type[prompt] -= 1

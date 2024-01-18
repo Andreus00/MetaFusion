@@ -1,6 +1,6 @@
 address: ''
 private_key: ''
-poll_interval: 1
+poll_interval: 0.1
 provider:
   _target_: web3.Web3
   provider:

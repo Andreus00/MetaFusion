@@ -19,6 +19,7 @@ def initTrackerFilters(contract):
         contract.events.CreateImage.create_filter(fromBlock="latest"),
         contract.events.PromptCreated.create_filter(fromBlock="latest"),
         contract.events.ImageCreated.create_filter(fromBlock="latest"),
+        contract.events.DestroyImage.create_filter(fromBlock="latest"),
         # contract.events.WillToBuyPacket.create_filter(fromBlock="latest"),
         # contract.events.WillToBuyPrompt.create_filter(fromBlock="latest"),
         # contract.events.WillToBuyImage.create_filter(fromBlock="latest"),
@@ -52,9 +53,7 @@ def handle_event(event, provider, contract, IPFSClient, data):
     event_args = event.args
 
     event_class = get_event_class(event_name)
-    print(event_class)
     kwargs = dict(event_args)
     kwargs['event'] = event_name
     event_object = event_class(**kwargs)
-    print(event_object)
     event_object.handle(contract, provider, IPFSClient, data)

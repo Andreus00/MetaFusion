@@ -39,6 +39,29 @@ function genPKUUID(collection: number , idInCollection: number){
     return ((idInCollection) << (16)) | (collection)
 }
 
+
+async function waitUserInput() {
+
+    const readline = require('node:readline');
+    const { stdin: input, stdout: output } = require('node:process');
+
+    const rl = readline.createInterface({ input, output });
+
+    let final_answer = undefined;
+
+    rl.question('Press [ENTER] to continue execution...', (answer: string) => {
+        // TODO: Log the answer in a database
+        console.log(`Execution resumed.`);
+        final_answer = answer;
+        rl.close();
+    });
+
+    while (final_answer === undefined) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+    }
+}
+
+
 async function connect(contractName: string) {
 
     const SIMULATE_PACKET_FORGE = true;
@@ -47,6 +70,7 @@ async function connect(contractName: string) {
     const SIMULATE_PROMPT_TRANSFER = true;
     const SIMULATE_IMAGE_CREATION = true;
     const SIMULATE_IMAGE_TRANSFER = true;
+    const SIMULATE_IMAGE_DESTRUCTION = true;
 
 
     const wallet_owner = await ethers.getSigner(owner_priv_key);
@@ -58,7 +82,7 @@ async function connect(contractName: string) {
 
     // connect to contract as owner and forge collection
 
-    let args = { value: ethers.parseEther("1") }
+    let args = { value: ethers.parseEther("0.1") }
 
     const contract_owner = await ethers.getContractAt(contractName, contract_address, wallet_owner)
     const contract_other = await ethers.getContractAt(contractName, contract_address, wallet_other)
@@ -67,6 +91,9 @@ async function connect(contractName: string) {
     const contracts = [contract_other, contract_other_2]
 
     if (SIMULATE_PACKET_FORGE) {
+
+        console.log('FORGING PACKETS');
+
         for (let i = 0; i < collections.length; i++) {
             let collection = collections[i]
             let tx = await contract_owner.forgeCollection(collection)
@@ -96,12 +123,16 @@ async function connect(contractName: string) {
         }
 
         console.log(images);
+
+        await waitUserInput();
     }
 
     // sleep
     await new Promise(r => setTimeout(r, 2500));
 
     if (SIMULATE_PACKET_TRANSFER) {
+
+        console.log('PACKET TRANSFERS');
 
         var seller = wallet_other;
         var contract_seller = contract_other;
@@ -151,10 +182,15 @@ async function connect(contractName: string) {
             let balance_other_2 = await buyer.provider.getBalance(other2_priv_key);
             console.log('balance_other_2: ', balance_other_2);
         }
+
+        await waitUserInput();
     }
 
 
     if (SIMULATE_PACKET_OPENING) {
+
+        console.log('PACKET OPENING');
+
         // cycle on collections, wallets  and packets
         for (let i = 0; i < collections.length; i++) {
             let collection = collections[i];
@@ -178,7 +214,7 @@ async function connect(contractName: string) {
         }
         console.log(prompts);
 
-        await new Promise(r => setTimeout(r, 10000));
+        await waitUserInput();
     }
 
     function getRandomInt(max: number) {
@@ -186,6 +222,9 @@ async function connect(contractName: string) {
     }
 
     if (SIMULATE_PROMPT_TRANSFER) {
+
+        console.log('PROMPT TRANSFER');
+
         var seller = wallet_other;
         var contract_seller = contract_other;
         var buyer = wallet_other2;
@@ -209,7 +248,7 @@ async function connect(contractName: string) {
             let collection = collections[(collections.length - 1) % (i + 1)];
             let prompt_id = prompts[seller.address][collection][i];
 
-            let tx = await contract_seller.listPrompt(prompt_id, ethers.parseEther("0.01"));
+            let tx = await contract_seller.listPrompt(prompt_id, args["value"]);
             await tx.wait();
 
             let tx2 = await contract_buyer.buyPrompt(prompt_id, args);
@@ -230,10 +269,13 @@ async function connect(contractName: string) {
             let balance_buyer = await buyer.provider.getBalance(other2_priv_key);
             console.log('balance_buyer: ', balance_buyer);
         }
+
+        await waitUserInput();
     }
 
     if (SIMULATE_IMAGE_CREATION){
-        console.log("Creating images");
+        
+        console.log('IMAGE CREATION');
 
         const TOT_IMAGES: number = 8;   // try to create 8 images. Random users, random collections. 
                                         // If the user does not have characters in the collection, skip the image creation.
@@ -276,26 +318,15 @@ async function connect(contractName: string) {
         }
 
 
+
+        await waitUserInput();
     }
-    const readline = require('node:readline');
-    const { stdin: input, stdout: output } = require('node:process');
 
-    const rl = readline.createInterface({ input, output });
-
-    let final_answer = undefined;
-
-    rl.question('Press [ENTER] to continue execution...', (answer: string) => {
-        // TODO: Log the answer in a database
-        console.log(`Execution resumed.`);
-        final_answer = answer;
-        rl.close();
-    });
-
-    while (final_answer === undefined) {
-        await new Promise(resolve => setTimeout(resolve, 500));
-    }
     
     if(SIMULATE_IMAGE_TRANSFER){
+
+        console.log('IMAGE TRANSFERS');
+
         let seller = wallet_other;
         let contract_seller = contract_other;
         let buyer = wallet_other2;
@@ -327,7 +358,43 @@ async function connect(contractName: string) {
         let balance_buyer = await buyer.provider.getBalance(other2_priv_key);
         console.log('balance_buyer: ', balance_buyer);
         
+
+        await waitUserInput();
     }
+
+    if (SIMULATE_IMAGE_DESTRUCTION) {
+
+        console.log('IMAGE DESTRUCTION');
+
+        var contract = contract_other;
+        var image_id;
+
+        for (let i = 0; i < collections.length; i++) {
+
+            let key = other_priv_key;
+            let collection = i;
+            contract = contract_other;
+            image_id = images[key][collection][0];
+    
+            if (images[key][collection].length == 0){
+                key = other2_priv_key;
+                contract = contract_other_2;
+                image_id = images[key][collection][0];
+    
+                if (images[key][collection].length == 0){
+                    continue;
+                }
+            }
+            break;
+        }
+
+        let tx = await contract.burnImageAndRecoverPrompts(image_id);
+        await tx.wait();
+
+        await waitUserInput();
+
+    }
+
 
     return;
 }

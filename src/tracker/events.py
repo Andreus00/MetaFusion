@@ -5,6 +5,7 @@ from typing import List
 from ..db.data import Data
 from ..utils.utils import *
 import json
+import ipfs_api
 
 PACKET_SIZE = 8
 NUM_PROMPT_TYPES = 6
@@ -119,6 +120,24 @@ class ImageCreated(Event):
         image.initWithParams(id=self.imageId, userIdHex=self.creator, hash=imageCid, data=data)
         image.freezePrompts(data)
         IPFSClient.download(imageCid, path=f"ipfs/image/{self.imageId}.png")
+
+@dataclass
+class DestroyImage(Event):
+    imageId: int
+    userId: str
+
+    def handle(self, contract, provider, IPFSClient: ipfs_api, data: Data):
+        '''
+        address indexed creator, uint256 prompts, string uri
+        '''
+        # delete the image from the db
+        image = data.get_image(self.imageId)
+        image.unfreezePrompts(data)
+        IPFSClient.unpin(image.hash)
+        image.deleteFromDb(data)
+
+
+
 
 
 @dataclass

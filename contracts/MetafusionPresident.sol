@@ -30,6 +30,7 @@ contract MetaFusionPresident {
     event PromptCreated(uint256 IPFSCid, uint32 promptId, address to);
     event CreateImage(address indexed creator, uint256 cardId, string uri);
     event ImageCreated(uint256 IPFSCid, uint256 imageId, address indexed creator);
+    event DestroyImage(uint256 imageId, address indexed userId);
     event WillToBuyPacket(address buyer, address seller, uint256 id, uint256 value);
     event WillToBuyPrompt(address buyer, address seller, uint256 id, uint256 value);
     event WillToBuyImage(address buyer, address seller, uint256 id, uint256 value);
@@ -181,19 +182,21 @@ contract MetaFusionPresident {
         emit ImageCreated(IPFSCid, imageId, to);
     }
 
-    function burnImageAndRecoverPrompts(uint256 imageId) public payable {
+    function burnImageAndRecoverPrompts(uint256 imageId) public {
         require(metaCard.isCardOwnedBy(msg.sender, imageId), "You are not the image owner");
         metaCard.destroyCard(imageId);
         metaCard.deleteCard(imageId, msg.sender);
-        imageId = imageId >> 64; //remove seed
+        uint256 imageIdShifted = imageId >> 64; //remove seed
         for(uint8 i = 0; i < NUM_PROMPT_TYPES; i++){
-            uint32 currentPromptId = uint32(imageId & 0xffffffff);
+            uint32 currentPromptId = uint32(imageIdShifted & 0xffffffff);
             if (currentPromptId != 0){
                 // avoid minting non existing prompts IDs
                 metaPrompt.mint(msg.sender, currentPromptId);
             }
-            imageId = imageId >> 32;
+            imageIdShifted = imageIdShifted >> 32;
         }
+
+        emit DestroyImage(imageId, msg.sender);
     }
 
     /**

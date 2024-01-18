@@ -81,7 +81,7 @@ def loop(provider, contract, filters, IPFSClient, model, data, cfg):
                 num_events_found += 1
                 handle_event(event, provider, contract, IPFSClient, model, data)
         time.sleep(cfg.poll_interval)
-        logger.info(f"Events found: {num_events_found}")
+        
 
 def initData():
     return Data()

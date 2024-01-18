@@ -1,7 +1,7 @@
 address: ""
 private_key: ""
 
-poll_interval: 1
+poll_interval: 0.1
 
 defaults:
   - _self_

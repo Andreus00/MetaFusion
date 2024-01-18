@@ -120,6 +120,7 @@ class Image:
 		for prompt in prompts:
 			if prompt != 0:
 				data.freeze_prompt(prompt_id=prompt)
+				
 	def unfreezePrompts(self, data):
 		_, prompts = getInfoFromImageId(self.id)
 		for prompt in prompts:
@@ -129,6 +130,12 @@ class Image:
 	def writeToDb(self, data):
 		cur = data.get_cursor()
 		cur.execute('INSERT OR REPLACE INTO Images(id, ipfsHash, isListed, price, userHex, collectionId) VALUES (?, ?, ?, ?, ?, ?)', (from_int_to_hex_str(self.id), self.hash, self.isListed, from_int_to_hex_str(self.price), self.userIdHex, self.getOriginalCollection()))
+		data.con.commit()
+		cur.close()
+
+	def deleteFromDb(self, data):
+		cur = data.get_cursor()
+		cur.execute('DELETE FROM Images WHERE id=?', (from_int_to_hex_str(self.id),))
 		data.con.commit()
 		cur.close()
 
@@ -343,7 +350,7 @@ class Data:
 		cur = self.get_cursor()
 		try:
 			cur.execute('UPDATE Packets SET isListed = 1, price = ? WHERE id = ?', 
-				(from_int_to_hex_str(packet_id), from_int_to_hex_str(price)))
+				(from_int_to_hex_str(price), from_int_to_hex_str(packet_id)))
 			self.con.commit()
 			return True
 		finally:
@@ -352,7 +359,7 @@ class Data:
 	def list_prompt(self, prompt_id: int, price: int):
 		cur = self.get_cursor()
 		try:
-			cur.execute('UPDATE Prompts SET isListed = 1, price = ? WHERE id = ?', (from_int_to_hex_str(prompt_id), from_int_to_hex_str(price)))
+			cur.execute('UPDATE Prompts SET isListed = 1, price = ? WHERE id = ?', (from_int_to_hex_str(price), from_int_to_hex_str(prompt_id)))
 			self.con.commit()
 			return True
 		finally:
@@ -361,7 +368,7 @@ class Data:
 	def list_image(self, image_id: int, price: int):
 		cur = self.get_cursor()
 		try:
-			cur.execute('UPDATE Images SET isListed = 1, price = ? WHERE id = ?', (from_int_to_hex_str(image_id), from_int_to_hex_str(price)))
+			cur.execute('UPDATE Images SET isListed = 1, price = ? WHERE id = ?', (from_int_to_hex_str(price), from_int_to_hex_str(image_id)))
 			self.con.commit()
 			return True
 		finally:
@@ -448,7 +455,7 @@ class Data:
 		
 		cur = self.get_cursor()
 		try:
-			cur.execute('INSERT INTO SellEvents(objId, userFromHex, userToHex, price, type) values (?, ?, ?, ?, ?)', (from_int_to_hex_str(objId), from_user_id, to_user_id, obj.price, objType))
+			cur.execute('INSERT INTO SellEvents(objId, userFromHex, userToHex, price, type) values (?, ?, ?, ?, ?)', (from_int_to_hex_str(objId), from_user_id, to_user_id,from_int_to_hex_str(obj.price), objType))
 			self.con.commit()
 			return True
 		finally:

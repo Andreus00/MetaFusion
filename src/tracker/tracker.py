@@ -68,11 +68,14 @@ def loop(provider, contract, filters, IPFSClient, data, cfg):
     num_events_found = 0
     while True:
         for filter in filters:
-            for event in filter.get_new_entries():
-                handle_event(event, provider, contract, IPFSClient, data)
-                num_events_found += 1
+            new_entries = filter.get_new_entries()
+            if new_entries:
+                logger.info(f"Found {len(new_entries)} new events for filter {filter}")
+                for idx, event in enumerate(new_entries):
+                    print(f"Event {idx}: {event}")
+                    handle_event(event, provider, contract, IPFSClient, data)
+                    num_events_found += 1
         time.sleep(cfg.poll_interval)
-        logger.info(f"Events found: {num_events_found}")
 
 
 @hydra.main(config_path="../../conf", config_name="tracker_config")
