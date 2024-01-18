@@ -73,13 +73,13 @@ def initContract(contract_cfg, provider):
     )
     return contract
 
-def loop(provider, contract, filters, IPFSClient, model, data, cfg):
+def loop(provider, contract, filters, IPFSClient, model, data, cfg, logger):
     num_events_found = 0
     while True:
         for filter in filters:
             for event in filter.get_new_entries():
                 num_events_found += 1
-                handle_event(event, provider, contract, IPFSClient, model, data)
+                handle_event(event, provider, contract, IPFSClient, model, data, logger)
         time.sleep(cfg.poll_interval)
         
 
@@ -103,7 +103,7 @@ def main(cfg):
 
     filters = initOracleFilters(contract)
 
-    loop(provider, contract, filters, IPFSClient, model, data, cfg)
+    loop(provider, contract, filters, IPFSClient, model, data, cfg, logger)
 
 if __name__ == "__main__":
     main()

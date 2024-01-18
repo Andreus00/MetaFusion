@@ -23,7 +23,7 @@ def initOracleFilters(contract):
 
     return filters
 
-def handle_event(event, provider, contract, IPFSClient, model, data):
+def handle_event(event, provider, contract, IPFSClient, model, data, logger):
     '''
     New event: AttributeDict({
                 'args': AttributeDict({
@@ -48,5 +48,5 @@ def handle_event(event, provider, contract, IPFSClient, model, data):
     kwargs['event'] = event_name
     print("Arguments:", kwargs)
     event_object = event_class(**kwargs)
-    
     event_object.handle(contract, provider, IPFSClient, model, data)
+    event_object.log(logger)

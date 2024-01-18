@@ -22,7 +22,14 @@ class Event(ABC):
     @abstractmethod
     def handle(self, contract, provider, IPFSClient, model, data):
         pass
-        
+
+    def log(self, logger):
+        attributes = "\n".join([f"{k}: {v}" for k, v in self.__dict__.items()])
+        msg = f"""
+                ====================
+                {attributes}
+                """
+        logger.info(f"{msg}")
 
 @dataclass
 class PacketOpened(Event):

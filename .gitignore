@@ -28,3 +28,4 @@ __pycache__/
 .log
 ipfs/
 tracker.log
+oracle.log

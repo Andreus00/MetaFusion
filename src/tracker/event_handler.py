@@ -33,7 +33,7 @@ def initTrackerFilters(contract):
 
     return filters
 
-def handle_event(event, provider, contract, IPFSClient, data):
+def handle_event(event, provider, contract, IPFSClient, data, logger):
     '''
     New event: AttributeDict({
                 'args': AttributeDict({
@@ -57,3 +57,4 @@ def handle_event(event, provider, contract, IPFSClient, data):
     kwargs['event'] = event_name
     event_object = event_class(**kwargs)
     event_object.handle(contract, provider, IPFSClient, data)
+    event_object.log(logger)

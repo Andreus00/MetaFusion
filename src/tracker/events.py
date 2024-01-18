@@ -31,6 +31,14 @@ class Event(ABC):
     def handle(self, contract, provider, IPFSClient, data: Data):
         pass
 
+    def log(self, logger):
+        attributes = "\n".join([f"{k}: {v}" for k, v in self.__dict__.items()])
+        msg = f"""
+                ====================
+                {attributes}
+                """
+        logger.info(f"{msg}")
+
 @dataclass
 class PacketForged(Event):
     blacksmith: str
@@ -79,11 +87,6 @@ class PromptCreated(Event):
         textCid = int256ToCid(self.IPFSCid)
         prompt_json = json.loads(IPFSClient.http_client.cat(textCid).decode("utf-8"))
         name = prompt_json['name']
-        print("------------------")
-        print("Prompt:", self.promptId)
-        print("Name:", name)
-        print("CID:", textCid)
-        print("CID_int:", self.IPFSCid)
         prompt.initWithParams(id = self.promptId, 
                               hash = textCid, 
                               name = name,
