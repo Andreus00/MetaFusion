@@ -172,7 +172,7 @@ contract MetaFusionPresident {
         uint256 cardId = metaCard.mint(msg.sender, mergedPrompts);
         string memory uri = metaCard.tokenURI(cardId);
         // remove the prompts from the user's list
-        metaPrompt.removePromts(prompts_array, msg.sender);
+        // metaPrompt.removePromts(prompts_array, msg.sender);
         // emit event
         emit CreateImage(msg.sender, cardId, uri);
     }
@@ -277,7 +277,7 @@ contract MetaFusionPresident {
      * @param imageId the image to transfer
      * @param val the amount of ether to send to the seller
      */
-    function transferCard(address buyer, address seller, uint32 imageId, uint256 val) public isCardListed(imageId) onlyOwner {
+    function transferCard(address buyer, address seller, uint256 imageId, uint256 val) public isCardListed(imageId) onlyOwner {
         _payAddress(seller, val);
         metaCard.transferFrom(seller, buyer, imageId);
         emit CardTransfered(buyer, seller, imageId, val);

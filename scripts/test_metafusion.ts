@@ -31,6 +31,9 @@ images[other2_priv_key] = {};
 
 const FORGE_TOT_PACKETS = 6;
 const NUM_PROMPT_PER_IMAGE = 6;
+const NUM_PACKET_TRANSFERS = 6;
+const NUM_PROMPT_TRANSFERS = 12;
+const NUM_IMAGE_TRANSFERS = 6;
 
 function genPKUUID(collection: number , idInCollection: number){
     return ((idInCollection) << (16)) | (collection)
@@ -41,7 +44,9 @@ async function connect(contractName: string) {
     const SIMULATE_PACKET_FORGE = true;
     const SIMULATE_PACKET_TRANSFER = true;
     const SIMULATE_PACKET_OPENING = true;
+    const SIMULATE_PROMPT_TRANSFER = true;
     const SIMULATE_IMAGE_CREATION = true;
+    const SIMULATE_IMAGE_TRANSFER = true;
 
 
     const wallet_owner = await ethers.getSigner(owner_priv_key);
@@ -97,37 +102,55 @@ async function connect(contractName: string) {
     await new Promise(r => setTimeout(r, 2500));
 
     if (SIMULATE_PACKET_TRANSFER) {
-        let seller = wallet_other;
-        let contract_seller = contract_other;
-        let buyer = wallet_other2;
-        let contract_buyer = contract_other_2;
 
-        // seller lists packet for sale
-        let packet_id = packets[seller.address][collections[0]][0];
+        var seller = wallet_other;
+        var contract_seller = contract_other;
+        var buyer = wallet_other2;
+        var contract_buyer = contract_other_2;
 
-        let tx = await contract_seller.listPacket(packet_id, ethers.parseEther("0.1"));
-        await tx.wait();
+        for (let i = 0; i < NUM_PACKET_TRANSFERS; i++) {
 
-        // buyer calls the willToBuy
-        let tx2 = await contract_buyer.buyPacket(packet_id, args);
-        await tx2.wait();
+            if (i % 2 == 0) {
+                seller = wallet_other;
+                contract_seller = contract_other;
+                buyer = wallet_other2;
+                contract_buyer = contract_other_2;
+            }
+            else {
+                seller = wallet_other2;
+                contract_seller = contract_other_2;
+                buyer = wallet_other;
+                contract_buyer = contract_other;
+            }
 
-        // wait for the transfer to be completed
-        await new Promise(r => setTimeout(r, 2500));
+            // seller lists packet for sale
+            let collection = collections[(collections.length - 1) % (i + 1)];
+            let packet_id = packets[seller.address][collection][i];
 
-        packets[seller.address][collections[0]].splice(0, 1);
-        packets[buyer.address][collections[0]].push(packet_id);
+            let tx = await contract_seller.listPacket(packet_id, ethers.parseEther("0.1"));
+            await tx.wait();
 
-        // check the ownership on blockchain
-        let owner = await contract_seller.ownerOfPacket(packet_id);
-        console.log('new owner: ', owner);
+            // buyer calls the willToBuy
+            let tx2 = await contract_buyer.buyPacket(packet_id, args);
+            await tx2.wait();
 
-        // check the balance of the buyer and seller
-        let balance_other = await seller.provider.getBalance(other_priv_key);
-        console.log('balance_other: ', balance_other);
+            // wait for the transfer to be completed
+            await new Promise(r => setTimeout(r, 2500));
 
-        let balance_other_2 = await buyer.provider.getBalance(other2_priv_key);
-        console.log('balance_other_2: ', balance_other_2);
+            packets[seller.address][collection].splice(i, 1);
+            packets[buyer.address][collection].push(packet_id);
+
+            // check the ownership on blockchain
+            let owner = await contract_seller.ownerOfPacket(packet_id);
+            console.log('new owner: ', owner);
+
+            // check the balance of the buyer and seller
+            let balance_other = await seller.provider.getBalance(other_priv_key);
+            console.log('balance_other: ', balance_other);
+
+            let balance_other_2 = await buyer.provider.getBalance(other2_priv_key);
+            console.log('balance_other_2: ', balance_other_2);
+        }
     }
 
 
@@ -160,6 +183,53 @@ async function connect(contractName: string) {
 
     function getRandomInt(max: number) {
         return Math.floor(Math.random() * max);
+    }
+
+    if (SIMULATE_PROMPT_TRANSFER) {
+        var seller = wallet_other;
+        var contract_seller = contract_other;
+        var buyer = wallet_other2;
+        var contract_buyer = contract_other_2;
+
+        for (let i = 0; i < NUM_PROMPT_TRANSFERS; i++) {
+
+            if (i % 2 == 0) {
+                seller = wallet_other;
+                contract_seller = contract_other;
+                buyer = wallet_other2;
+                contract_buyer = contract_other_2;
+            }
+            else {
+                seller = wallet_other2;
+                contract_seller = contract_other_2;
+                buyer = wallet_other;
+                contract_buyer = contract_other;
+            }
+
+            let collection = collections[(collections.length - 1) % (i + 1)];
+            let prompt_id = prompts[seller.address][collection][i];
+
+            let tx = await contract_seller.listPrompt(prompt_id, ethers.parseEther("0.01"));
+            await tx.wait();
+
+            let tx2 = await contract_buyer.buyPrompt(prompt_id, args);
+            await tx2.wait();
+
+            await new Promise(r => setTimeout(r, 2500));
+            prompts[seller.address][collection].splice(i, 1);
+            prompts[buyer.address][collection].push(prompt_id);
+
+            // check the ownership on blockchain
+            let owner = await contract_seller.ownerOfPrompt(prompt_id);
+            console.log('new owner: ', owner);
+
+            // check the balance of the buyer and seller
+            let balance_seller = await seller.provider.getBalance(other_priv_key);
+            console.log('balance_seller: ', balance_seller);
+
+            let balance_buyer = await buyer.provider.getBalance(other2_priv_key);
+            console.log('balance_buyer: ', balance_buyer);
+        }
     }
 
     if (SIMULATE_IMAGE_CREATION){
@@ -205,26 +275,58 @@ async function connect(contractName: string) {
             images[cur_key][cur_collection].push(cardId);
         }
 
-        // let collection = collections[0];
-        // images[other_priv_key][collection] = []; // create list 
 
-        // let myPrompts = prompts[other_priv_key][collection];
+    }
+    const readline = require('node:readline');
+    const { stdin: input, stdout: output } = require('node:process');
 
-        // let usePrompts = [0, 0, 0, 0, 0, 0];
-        // for (let i = 0; i < NUM_PROMPT_PER_IMAGE; i++) {
-        //   let promptId = myPrompts[i];
-        //   let promptType = ((promptId >> 13) & 0x7);
-        //   usePrompts[promptType] = promptId;
-        // }
+    const rl = readline.createInterface({ input, output });
 
-        // console.log(usePrompts);
+    let final_answer = undefined;
+
+    rl.question('Press [ENTER] to continue execution...', (answer: string) => {
+        // TODO: Log the answer in a database
+        console.log(`Execution resumed.`);
+        final_answer = answer;
+        rl.close();
+    });
+
+    while (final_answer === undefined) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+    }
+    
+    if(SIMULATE_IMAGE_TRANSFER){
+        let seller = wallet_other;
+        let contract_seller = contract_other;
+        let buyer = wallet_other2;
+        let contract_buyer = contract_other_2;
+
+        let collection = collections[0];
+        let image_id = images[seller.address][collection][0];
+        console.log(images);
+        let tx = await contract_seller.listCard(image_id, ethers.parseEther('2.0'));
+        await tx.wait();
+
+        tx = await contract_buyer.buyCard(image_id, { value: ethers.parseEther('2.0')});
+        await tx.wait();
+
+
+        await new Promise(r => setTimeout(r, 5500));
+
+        images[seller.address][collection].splice(0, 1);
+        images[buyer.address][collection].push(image_id);
+
+        // check the ownership on blockchain
+        let owner = await contract_seller.ownerOfCard(image_id);
+        console.log('new owner: ', owner);
+
+        // check the balance of the buyer and seller
+        let balance_seller = await seller.provider.getBalance(other_priv_key);
+        console.log('balance_seller: ', balance_seller);
+
+        let balance_buyer = await buyer.provider.getBalance(other2_priv_key);
+        console.log('balance_buyer: ', balance_buyer);
         
-        // let tx = await contract_other.createImage(usePrompts, { value: ethers.parseEther("0.1") })
-        // let rc = await tx.wait();
-        // let event = rc.logs[rc.logs.length - 1];
-        // const [sender, cardId, uri] = event.args;
-        // let cur_address = await contract_other.runner?.getAddress();
-        // images[cur_address][collection].push(cardId);
     }
 
     return;
@@ -243,48 +345,3 @@ main().catch((error) => {
     console.error(error);
     process.exitCode = 1;
 });
-
-/*
-import { ethers } from "hardhat";
-import * as fs from 'fs';
-
-async function getContract(contractName: string, address: string) {
-    // connect to contract
-    var contract = await ethers.getContractAt(contractName, "0x5fbdb2315678afecb367f032d93f642f64180aa3");
-    return contract;
-}
-async function connectAccount(contract: any, address: string) {
-    // login with private key
-    const wallet = new ethers.Wallet(address);
-    // connect to network
-    const connectedContract = await contract.connect(wallet);
-    return connectedContract;
-
-}
-async function main() {
-    const contractName = "MetaFusionPresident";
-    const contractAddress = "0x5fbdb2315678afecb367f032d93f642f64180aa3";
-
-    const ownerPrivateKey = '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80'
-    const otherPrivateKey = '0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d'
-
-    const contract = await getContract(contractName, contractAddress);
-
-    const connectedContractOwner = await connectAccount(contract, ownerPrivateKey);
-    const connectedContractOther = await connectAccount(contract, otherPrivateKey);
-
-    for (let i = 2; i <= 100; i++) {
-		console.log("Creating collection " + i);
-        let tx = await connectedContractOwner.forgeCollection(i);
-        await tx.wait();
-        for (let j = 1; j <= 100; j++) {
-			console.log("Forging packet " + j +  " for collection " + i);
-            let tx = await connectedContractOther.forgePacket(i);
-            await tx.wait();
-        }
-    }
-
-    console.log(
-        'mintPacket completed.');
-}
-*/

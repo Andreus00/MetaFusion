@@ -173,7 +173,7 @@ class PromptTransfered(TransferEvent):
         
 
 @dataclass
-class ImageTransfered(TransferEvent):
+class CardTransfered(TransferEvent):
 
     def handle(self, contract, provider, IPFSClient, data: Data):
         data.transfer_image(self.id, self.seller, self.buyer)
@@ -208,6 +208,7 @@ class UpdateListImage(UpdateNFT):
             data.list_image(self.id, self.price)
         else:
             data.unlist_image(self.id)
+
 
 
 def get_event_class(event_name):
