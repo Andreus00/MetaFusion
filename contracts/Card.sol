@@ -47,8 +47,6 @@ contract MetaCard is ERC721 {
     
     string public baseURI = "https://metafusion.io/api/card/";  // The base URI for the metadata of the cards
 
-    mapping (address => uint256[]) private card_list;  // The list of cards owned by an address. Everyone can read this.
-
     modifier onlyOwner() {
         require(msg.sender == owner, "You're not the owner!");
         _;
@@ -64,39 +62,9 @@ contract MetaCard is ERC721 {
         owner = msg.sender;    // The owner of the contract is the one who deployed it
     }
 
-    function getCardsOwnedBy(address _address) public view returns (uint256[] memory) {
-        return card_list[_address];
-    }
-
-    /**
-     * This function verify the owner identity and ensure that all prompts are legits
-     */
-    function isCardOwnedBy(address _address, uint256 cardId) public view returns (bool) {
-        uint256[] memory cards = card_list[_address];
-        bool isOwned = false;
-        for(uint256 i = 0; i < cards.length; i++){
-            uint256 card = cards[i];
-            isOwned = card == cardId;
-            if(isOwned){
-                break;
-            }
-        }
-        return isOwned;
-    }
 
     function destroyCard(uint256 imageId) payable public onlyOwner{
         _burn(imageId);
-    }
-
-    function deleteCard(uint256 card, address caller) public onlyOwner{
-        uint256[]memory cardList = card_list[caller];
-        for(uint256 index = 0; index < cardList.length; index++){
-            if (cardList[index] == card){
-                card_list[caller][index] = card_list[caller][cardList.length - 1];
-                card_list[caller].pop();
-                break;
-            }
-        }
     }
 
     function mint(address to, uint256 cardPrompts) public onlyMinter returns(uint256) {
@@ -106,10 +74,7 @@ contract MetaCard is ERC721 {
         cardPrompts = (cardPrompts << 64) | (seed >> (256 - 64)); // put the seed into the first 64 bits 
 
         _safeMint(to, cardPrompts);
-        // metadata[id].seed = _seed;
-        // metadata[id].prompts = _prompts;
-        // metadata[id].is_finalized = false;
-        card_list[to].push(cardPrompts);
+        
         return cardPrompts;
     }
 

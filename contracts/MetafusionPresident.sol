@@ -19,8 +19,6 @@ contract MetaFusionPresident {
     uint constant packetCost = 0.1 ether;
     uint constant packetOpeningCost = 0.01 ether;
 
-    string public baseURI = "https://metafusion.io/api/";  // The base URI for the metadata of packets, prompts and cards
-
     uint8 public constant NUM_PROMPT_TYPES = 6;  // The number of different prompt types
     uint8 public constant PACKET_SIZE = 8;  // The number of different prompt types
     uint256 private constant GENERATION_COST = 0.1 ether;  // The cost of generating an image
@@ -103,7 +101,7 @@ contract MetaFusionPresident {
     }
 
     function forgePacket(uint16 collection) public payable checkPacketCost{
-        // metaPacket.
+        // Forge a metaPacket.
         uint32 packetUUid = metaPacket.mint(msg.sender, collection);
         emit PacketForged(msg.sender, packetUUid);
     }
@@ -118,8 +116,7 @@ contract MetaFusionPresident {
         require(msg.value >= packetOpeningCost, "You didn't send enought ethers!");
         // metaPacket.
         metaPacket.openPacket(msg.sender, packetID);
-        // todo: call the oracle and get the prompts
-        // mock
+
         uint32[] memory prompts = new uint32[](PACKET_SIZE);
         string[] memory uris = new string[](PACKET_SIZE);
         for (uint8 i = 0; i < PACKET_SIZE; i++) {
@@ -128,8 +125,6 @@ contract MetaFusionPresident {
             uint8 prompt_type = uint8(idhash % NUM_PROMPT_TYPES);
 
             uint32 promptId = _getPromptId(packetID, i, prompt_type); // embedding informations
-
-            // get the prompt type from the hash
 
             metaPrompt.mint(msg.sender, promptId);
             prompts[i] = promptId;
@@ -141,14 +136,6 @@ contract MetaFusionPresident {
 
     function promptMinted(uint256 IPFSCid, uint32 promptId, address to) public onlyOwner {
         emit PromptCreated(IPFSCid, promptId, to);
-    }
-
-    function getPromptsOwnebBy(address _address) public view returns (uint32[] memory) {
-        return metaPrompt.getPromptsOwnebBy(_address);
-    }
-
-    function getCardsOwnedBy(address _address) public view returns (uint256[] memory) {
-        return metaCard.getCardsOwnedBy(_address);
     }
 
     function _mergePrompts(uint32[NUM_PROMPT_TYPES] memory prompts) private pure returns (uint256) {
@@ -183,9 +170,8 @@ contract MetaFusionPresident {
     }
 
     function burnImageAndRecoverPrompts(uint256 imageId) public {
-        require(metaCard.isCardOwnedBy(msg.sender, imageId), "You are not the image owner");
+        require(metaCard.ownerOf(imageId) == msg.sender, "You are not the image owner");
         metaCard.destroyCard(imageId);
-        metaCard.deleteCard(imageId, msg.sender);
         uint256 imageIdShifted = imageId >> 64; //remove seed
         for(uint8 i = 0; i < NUM_PROMPT_TYPES; i++){
             uint32 currentPromptId = uint32(imageIdShifted & 0xffffffff);

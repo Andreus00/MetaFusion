@@ -74,12 +74,13 @@ def initContract(contract_cfg, provider):
     return contract
 
 def loop(provider, contract, filters, IPFSClient, model, data, cfg, logger):
-    num_events_found = 0
     while True:
         for filter in filters:
-            for event in filter.get_new_entries():
-                num_events_found += 1
-                handle_event(event, provider, contract, IPFSClient, model, data, logger)
+            for idx, event in enumerate(filter.get_new_entries()):
+                try:
+                    handle_event(event, provider, contract, IPFSClient, model, data, logger)
+                except Exception as e:
+                    print(f"Error handling event {idx}: {e}")
         time.sleep(cfg.poll_interval)
         
 

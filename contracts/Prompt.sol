@@ -32,9 +32,6 @@ contract MetaPrompt is ERC721 {
     address private owner;  // the owner of the contract
 
     uint32 public immutable NUM_PROMPT_TYPES;  // The number of different prompt types
-    
-    mapping (address => uint32[]) private prompt_list;  // TODO: remove this as it is only for debugging. 
-                                                        // The list of prompts owned by an address. Everyone can read this.
 
     string public baseURI = "https://metafusion.io/api/prompt/";  // The base URI for the metadata of the prompts
 
@@ -67,11 +64,6 @@ contract MetaPrompt is ERC721 {
     function mint(address to, uint32 id) public onlyMinter {
         // The oracle is the only one who can mint new prompts.
         _safeMint(to, uint256(id));
-        prompt_list[to].push(id);
-    }
-
-    function getPromptsOwnebBy(address _address) public view returns (uint32[] memory) {
-        return prompt_list[_address];
     }
 
     function getCollectionId(uint32 promptId) public pure returns (uint16){
@@ -80,39 +72,6 @@ contract MetaPrompt is ERC721 {
 
     function getPromptType(uint32 promptId) public pure returns (uint8){
         return uint8((promptId >> 13) & 0x7);
-    }
-
-    function removeElementFromArray(uint256 index, address caller) private{
-        prompt_list[caller][index] = prompt_list[caller][prompt_list[caller].length - 1];
-        prompt_list[caller].pop();
-    }
-
-    function removePromts(uint32[] memory prompts, address caller) public onlyOwner{
-        uint8 elementsToRemove = 0;
-        // count elements != 0
-        for(uint8 ii = 0; ii < prompts.length; ii++){
-            if(prompts[ii] != 0){
-                elementsToRemove += 1;
-            }
-        }
-        uint256 i = 0;
-        while (elementsToRemove >= 1){
-            bool isInList = false;
-            // check if prompt is in list
-            for(uint8 promptIndex = 0; promptIndex < prompts.length; promptIndex ++){
-                isInList = prompt_list[caller][i] == prompts[promptIndex];
-                if(isInList){
-                    break;
-                }
-            }
-            if(isInList){
-                removeElementFromArray(i, caller);
-                elementsToRemove --;
-                continue;  // do not update i
-            }
-            i++;
-        }
-        // this is a fast workaround, since it suffer from 
     }
 
     function burnForImageGeneration(address promptOwner, uint32[] memory _prompts) public onlyOwner {
@@ -141,7 +100,7 @@ contract MetaPrompt is ERC721 {
         }
         for (uint8 i = 0; i < NUM_PROMPT_TYPES; i++) {
             if (_prompts[i] != 0){
-                        _burn(_prompts[i]);
+                _burn(_prompts[i]);
             }
     	}	
     }
