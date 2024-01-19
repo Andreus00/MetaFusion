@@ -62,20 +62,11 @@ contract MetaFusionPresident {
         _;
     }
 
-    modifier isPacketListed(uint32 packetId) {
-        require(metaPacket.getApproved(packetId) == address(this), "The packet is not listed!");
+    modifier isTokenListed(uint256 packetId, ERC721 meta) {
+        require(meta.getApproved(packetId) == address(this), "The packet is not listed!");
         _;
     }
 
-    modifier isPromptListed(uint32 promptId) {
-        require(metaPrompt.getApproved(promptId) == address(this), "The prompt is not listed!");
-        _;
-    }
-
-    modifier isCardListed(uint256 cardId) {
-        require(metaCard.getApproved(cardId) == address(this), "The card is not listed!");
-        _;
-    }
 
     modifier isOwnerOf(uint256 tokenId, ERC721 meta) {
         require(meta.ownerOf(tokenId) == msg.sender, "You are not the owner of the token!");
@@ -202,7 +193,7 @@ contract MetaFusionPresident {
      * and, if so, it will call the 'transferPacket' function.
      * @param packetId the id of the packet to buy
      */
-    function buyPacket(uint32 packetId) public payable isPacketListed(packetId) {
+    function buyPacket(uint32 packetId) public payable isTokenListed(packetId, metaPacket) {
         // this function registers the will of the buyer to buy a listed packet
         address seller = metaPacket.ownerOf(packetId);
         emit WillToBuyPacket(msg.sender, seller, packetId, msg.value - TRANSACTION_FEES);
@@ -214,7 +205,7 @@ contract MetaFusionPresident {
      * and, if so, it will call the 'transferPrompt' function.
      * @param promptId the id of the prompt to buy
      */
-    function buyPrompt(uint32 promptId) public payable isPromptListed(promptId) {
+    function buyPrompt(uint32 promptId) public payable isTokenListed(promptId, metaPrompt) {
         // this function registers the will of the buyer to buy a listed prompt
         address seller = metaPrompt.ownerOf(promptId);
         emit WillToBuyPrompt(msg.sender, seller, promptId, msg.value - TRANSACTION_FEES);
@@ -226,7 +217,7 @@ contract MetaFusionPresident {
      * and, if so, it will call the 'transferCard' function.
      * @param cardId the id of the card to buy
      */
-    function buyCard(uint256 cardId) public payable isCardListed(cardId) {
+    function buyCard(uint256 cardId) public payable isTokenListed(cardId, metaCard) {
         // this function registers the will of the buyer to buy a listed card
         address seller = metaCard.ownerOf(cardId);
         emit WillToBuyImage(msg.sender, seller, cardId, msg.value - TRANSACTION_FEES);
@@ -251,7 +242,7 @@ contract MetaFusionPresident {
      * @param packetId the image to transfer
      * @param val the amount of ether to send to the seller
      */
-    function transferPacket(address buyer, address seller, uint32 packetId, uint256 val) public isPacketListed(packetId) onlyOwner {
+    function transferPacket(address buyer, address seller, uint32 packetId, uint256 val) public isTokenListed(packetId, metaPacket) onlyOwner {
         _payAddress(seller, val);
         metaPacket.transferFrom(seller, buyer, packetId);
         emit PacketTransfered(buyer, seller, packetId, val);
@@ -264,7 +255,7 @@ contract MetaFusionPresident {
      * @param promptId the prompt to transfer
      * @param val the amount of ether to send to the seller
      */
-    function transferPrompt(address buyer, address seller, uint32 promptId, uint256 val) public isPromptListed(promptId) onlyOwner {
+    function transferPrompt(address buyer, address seller, uint32 promptId, uint256 val) public isTokenListed(promptId, metaPrompt) onlyOwner {
         _payAddress(seller, val);
         metaPrompt.transferFrom(seller, buyer, promptId);
         emit PromptTransfered(buyer, seller, promptId, val);
@@ -277,7 +268,7 @@ contract MetaFusionPresident {
      * @param imageId the image to transfer
      * @param val the amount of ether to send to the seller
      */
-    function transferCard(address buyer, address seller, uint256 imageId, uint256 val) public isCardListed(imageId) onlyOwner {
+    function transferCard(address buyer, address seller, uint256 imageId, uint256 val) public isTokenListed(imageId, metaCard) onlyOwner {
         _payAddress(seller, val);
         metaCard.transferFrom(seller, buyer, imageId);
         emit CardTransfered(buyer, seller, imageId, val);
