@@ -49,6 +49,7 @@ class Prompt:
 	isFreezed: bool
 	userIdHex: str
 	name: str
+	rarity: int
 	
 	def initWithDb(self, res):
 		self.id = from_str_hex_to_int_str(res[0])
@@ -58,7 +59,8 @@ class Prompt:
 		self.isFreezed = res[4]
 		self.userIdHex = res[5]
 		self.name = res[6]
-	def initWithParams(self, id: int, userIdHex: str, hash: str = None, name: str = None, isListed: bool = False, price: int = 0, isFreezed: bool = False, data=None):
+		self.rarity = res[7]
+	def initWithParams(self, id: int, userIdHex: str, hash: str = None, name: str = None, rarity: int = None, isListed: bool = False, price: int = 0, isFreezed: bool = False, data=None):
 		self.id: int = id
 		self.hash: str = hash   # IPFS hash
 		self.isListed: bool = isListed
@@ -66,12 +68,13 @@ class Prompt:
 		self.isFreezed: bool = isFreezed	
 		self.userIdHex: str = userIdHex
 		self.name: str = name
+		self.rarity: int = rarity
 		if data is not None:
 			self.writeToDb(data)
 
 	def writeToDb(self, data):
 		cur = data.get_cursor()
-		cur.execute('INSERT OR REPLACE INTO Prompts(id, ipfsHash, isListed, price, isFreezed, userHex, name, collectionId, type) VALUES (?, ?, ?, ?, ? , ?, ?, ?, ?)', (from_int_to_hex_str(self.id), self.hash, self.isListed, from_int_to_hex_str(self.price), self.isFreezed, self.userIdHex, self.name, self.getOriginalCollection(), self.getType()))
+		cur.execute('INSERT OR REPLACE INTO Prompts(id, ipfsHash, isListed, price, isFreezed, userHex, name, collectionId, type, rarity) VALUES (?, ?, ?, ?, ? , ?, ?, ?, ?, ?)', (from_int_to_hex_str(self.id), self.hash, self.isListed, from_int_to_hex_str(self.price), self.isFreezed, self.userIdHex, self.name, self.getOriginalCollection(), self.getType(), self.rarity))
 		data.con.commit()
 		cur.close()
 

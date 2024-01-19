@@ -76,6 +76,7 @@ class PromptCreated(Event):
     to: str
     promptId: int
     IPFSCid: int
+    rarity: int
 
     def handle(self, contract, provider, IPFSClient, data: Data):
         '''
@@ -89,7 +90,8 @@ class PromptCreated(Event):
                               hash = textCid, 
                               name = name,
                               userIdHex = self.to, 
-                              data = data)
+                              data = data,
+                              rarity = self.rarity)
 
 @dataclass
 class CreateImage(Event):

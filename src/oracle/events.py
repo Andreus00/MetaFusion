@@ -45,22 +45,18 @@ class PacketOpened(Event):
 
             print(hex(int(prompt)), collection, type_id, packet)
 
-            random_prompt = word_generator.generate_prompt(collection, type_id, prompt)
+            random_prompt, rarity = word_generator.generate_prompt(collection, type_id, prompt)
 
-            #file_name = f"{prompt}.json"
-            #path = f"ipfs/prompt/{file_name}"
-            #with open(path, "w+") as f:
             data = {
                 "name": random_prompt,
                 "id": prompt,
                 "collection": collection,
                 "type": type_id,
+                "rarity": rarity,
             }
-            #    json.dump(data, f)
 
             # push the prompt on IPFS
             cid = IPFSClient.http_client.add_bytes(json.dumps(data).encode("utf-8"))
-            #cid = IPFSClient.publish(path)
 
             cid_int = utils.cidToInt256(cid)
 
@@ -74,7 +70,8 @@ class PacketOpened(Event):
             call_func = contract.functions.promptMinted(**{
                                         "IPFSCid": cid_int,
                                         "promptId": prompt,
-                                        "to": self.opener, 
+                                        "to": self.opener,
+                                        "rarity": rarity,
                                         })\
                                     .build_transaction({
                                         "from": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",

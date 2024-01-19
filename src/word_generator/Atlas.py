@@ -73,10 +73,10 @@ class WordExtractor(object):
         possible_prompts_likelihood = [prompt_type[prompt][0] for prompt in possible_prompts]
         extracted_index = random.choices(range(len(possible_prompts)), weights=possible_prompts_likelihood)[0]
         prompt = possible_prompts[extracted_index]
-        rarity = prompt_type[prompt][1]
+        rarity = prompt_type[prompt][1].value
 
         prompt_type[prompt][0] -= 1
         if prompt_type[prompt][0] == 0:
             del prompt_type[prompt]
 
-        return prompt
+        return prompt, rarity
