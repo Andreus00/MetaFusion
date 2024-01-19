@@ -32,8 +32,6 @@ contract MetaPrompt is ERC721 {
 
     uint32 public immutable NUM_PROMPT_TYPES;  // The number of different prompt types
 
-    string public baseURI = "https://metafusion.io/api/prompt/";  // The base URI for the metadata of the prompts
-
     modifier onlyOwner() {
         require(msg.sender == owner, "You're not the owner!");
         _;

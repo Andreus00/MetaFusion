@@ -36,8 +36,6 @@ contract MetaCard is ERC721 {
 
     address private owner;  // the owner of the contract; alias president
     
-    string public baseURI = "https://metafusion.io/api/card/";  // The base URI for the metadata of the cards
-
     modifier onlyOwner() {
         require(msg.sender == owner, "You're not the owner!");
         _;

@@ -41,9 +41,6 @@ contract MetaPacket is ERC721 {
 
 	uint16 constant MAX_PACKETS_PER_COLLECTION = 1000;  // The maximum number of packets that can be minted for each collection.
 
-	string public baseURI = "https://metafusion.io/api/packet/";  // The base URI for the metadata of the packets; alias besughi
-
-
 	/////////////// MODIFIERS ///////////////
 
 

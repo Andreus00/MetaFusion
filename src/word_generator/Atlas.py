@@ -2,6 +2,13 @@ from dataclasses import dataclass
 from typing import List, Dict
 from random import choice
 import hashlib
+from enum import Enum
+import random
+class PromptRareness(Enum):
+    COMMON = 0
+    UNCOMMON = 1
+    RARE = 2
+    VERY_RARE = 3
 
 
 class WordExtractor(object):
@@ -10,40 +17,40 @@ class WordExtractor(object):
         self.collections = {}
         test_collection = {
             0: {
-                "dog": 100,
-                "cat": 200,
-                "fish": 300,
-                "bird": 400,
+                "dog": [100, PromptRareness.VERY_RARE],
+                "cat": [200, PromptRareness.RARE],
+                "racoon": [300, PromptRareness.UNCOMMON],
+                "bird": [400, PromptRareness.COMMON],
             },
             1: {
-                "hat": 100,
-                "cap": 200,
-                "helmet": 300,
-                "busby hat": 400,
+                "police hat": [100, PromptRareness.VERY_RARE],
+                "crown": [200, PromptRareness.RARE],
+                "helmet": [300, PromptRareness.UNCOMMON],
+                "baseball hat": [400, PromptRareness.COMMON],
             },
             2: {
-                "sword": 100,
-                "magic wand": 200,
-                "shuriken": 300,
-                "baseball glove": 400,
+                "sword": [100, PromptRareness.VERY_RARE],
+                "magic wand": [200, PromptRareness.RARE],
+                "shuriken": [300, PromptRareness.UNCOMMON],
+                "baseball glove": [400, PromptRareness.COMMON],
             },
             3: {
-                "blue and gold": 100,
-                "red and black": 200,
-                "purple and black": 300,
-                "green and red": 400,
+                "blue and gold": [100, PromptRareness.VERY_RARE],
+                "red and black": [200, PromptRareness.RARE],
+                "purple and black": [300, PromptRareness.UNCOMMON],
+                "green and red": [400, PromptRareness.COMMON],
             },
             4: {
-                "sun glasses": 100,
-                "red eyes": 200,
-                "purple eyes": 300,
-                "blindfold": 400,
+                "sun glasses": [100, PromptRareness.VERY_RARE],
+                "red eyes": [200, PromptRareness.RARE],
+                "purple eyes": [300, PromptRareness.UNCOMMON],
+                "blindfold": [400, PromptRareness.COMMON],
             },
             5: {
-                "futuristic": 100,
-                "samurai": 200,
-                "anime": 300,
-                "steampunk": 400,
+                "futuristic": [100, PromptRareness.VERY_RARE],
+                "samurai": [200, PromptRareness.RARE],
+                "anime": [300, PromptRareness.UNCOMMON],
+                "steampunk": [400, PromptRareness.COMMON],
             },
         }
         self.addCollection(1, test_collection)
@@ -56,16 +63,20 @@ class WordExtractor(object):
         '''
         Randomly get a prompt.
         '''
+        random.seed(prompt_id)
+
         collection = self.collections[collection_id]
 
         prompt_type = collection[type_id]
 
         possible_prompts = list(prompt_type.keys())
-        extracted_index = int(hashlib.sha256(f"{prompt_id}".encode("utf-8")).hexdigest(), 16) % len(possible_prompts)
+        possible_prompts_likelihood = [prompt_type[prompt][0] for prompt in possible_prompts]
+        extracted_index = random.choices(range(len(possible_prompts)), weights=possible_prompts_likelihood)[0]
         prompt = possible_prompts[extracted_index]
+        rarity = prompt_type[prompt][1]
 
-        prompt_type[prompt] -= 1
-        if prompt_type[prompt] == 0:
+        prompt_type[prompt][0] -= 1
+        if prompt_type[prompt][0] == 0:
             del prompt_type[prompt]
 
         return prompt
