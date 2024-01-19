@@ -2,16 +2,7 @@ from .events import *
 
 def initTrackerFilters(contract):
     """
-        Init the president event filters:
-            event PacketForged(address indexed blacksmith, uint32 packetUUid);
-            event PacketOpened(address indexed opener, uint32[] prompts);
-            event CreateImage(address indexed creator, uint256 prompts);
-            event willToBuyPacket(address buyer, address seller, uint256 id, uint256 value);
-            event willToBuyPrompt(address buyer, address seller, uint256 id, uint256 value);
-            event willToBuyImage(address buyer, address seller, uint256 id, uint256 value);
-            event PromptTransfered(address indexed buyer, address indexed seller, uint256 id);
-            event PacketTransfered(address indexed buyer, address indexed seller, uint256 id);
-            event CardTransfered(address indexed buyer, address indexed seller, uint256 id);
+        Init the tracker's event filters
     """
     filters = [
         contract.events.PacketForged.create_filter(fromBlock="latest"),
@@ -20,9 +11,6 @@ def initTrackerFilters(contract):
         contract.events.PromptCreated.create_filter(fromBlock="latest"),
         contract.events.ImageCreated.create_filter(fromBlock="latest"),
         contract.events.DestroyImage.create_filter(fromBlock="latest"),
-        # contract.events.WillToBuyPacket.create_filter(fromBlock="latest"),
-        # contract.events.WillToBuyPrompt.create_filter(fromBlock="latest"),
-        # contract.events.WillToBuyImage.create_filter(fromBlock="latest"),
         contract.events.PromptTransfered.create_filter(fromBlock="latest"),
         contract.events.PacketTransfered.create_filter(fromBlock="latest"),
         contract.events.CardTransfered.create_filter(fromBlock="latest"),

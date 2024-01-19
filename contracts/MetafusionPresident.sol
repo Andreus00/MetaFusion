@@ -12,7 +12,7 @@ contract MetaFusionPresident {
 
     /////////////// VARIABLES ///////////////
 
-    address immutable private owner;  // the owner of the contract
+    address immutable private owner;  // Owner of the contract
 
     MetaPrompt private metaPrompt;
     MetaPacket private metaPacket;
@@ -20,12 +20,12 @@ contract MetaFusionPresident {
 
     uint256 constant PACKET_COST = 0.1 ether;
     uint256 constant PACKET_OPENING_FEES = 0.01 ether;
-    uint256 constant GENERATION_FEES = 0.1 ether;  // The cost of generating an image
-    uint256 constant DESTRUCTION_FEES = 0.001 ether;  // The fees for image destruction
-    uint256 constant TRANSACTION_FEES = 0.01 ether;  // The fees for the transaction
+    uint256 constant GENERATION_FEES = 0.1 ether;  // Cost of generating an image
+    uint256 constant DESTRUCTION_FEES = 0.001 ether;  // Fees for image destruction
+    uint256 constant TRANSACTION_FEES = 0.001 ether;  // Fees for the transaction
 
-    uint8 public constant NUM_PROMPT_TYPES = 6;  // The number of different prompt types
-    uint8 public constant PACKET_SIZE = 8;  // The number of different prompt types
+    uint8 public constant NUM_PROMPT_TYPES = 6;  // Number of different prompt types
+    uint8 public constant PACKET_SIZE = 8;  // Number of different prompt types
 
     /////////////// EVENTS ///////////////
 

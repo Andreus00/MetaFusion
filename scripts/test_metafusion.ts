@@ -170,6 +170,7 @@ async function connect(contractName: string) {
             let tx = await contract_seller.listPacket(packet_id, packet_transf_cost);
             await tx.wait();
 
+
             // buyer calls the willToBuy
             let tx2 = await contract_buyer.buyPacket(packet_id, { value: packet_transf_cost + transaction_fees});
             await tx2.wait();
@@ -258,6 +259,7 @@ async function connect(contractName: string) {
 
             let tx = await contract_seller.listPrompt(prompt_id, prompt_transf_cost);
             await tx.wait();
+
 
             let tx2 = await contract_buyer.buyPrompt(prompt_id, { value: prompt_transf_cost + transaction_fees});
             await tx2.wait();
