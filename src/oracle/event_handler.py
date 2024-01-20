@@ -2,16 +2,7 @@ from .events import *
 
 def initOracleFilters(contract):
     """
-        Init the president event filters:
-            event PacketForged(address indexed blacksmith, uint32 packetUUid);
-            event PacketOpened(address indexed opener, uint32[] prompts);
-            event CreateImage(address indexed creator, uint256 prompts);
-            event willToBuyPacket(address buyer, address seller, uint256 id, uint256 value);
-            event willToBuyPrompt(address buyer, address seller, uint256 id, uint256 value);
-            event willToBuyImage(address buyer, address seller, uint256 id, uint256 value);
-            event PromptTransfered(address indexed buyer, address indexed seller, uint256 id);
-            event PacketTransfered(address indexed buyer, address indexed seller, uint256 id);
-            event CardTransfered(address indexed buyer, address indexed seller, uint256 id);
+        Init the oracle event filters
     """
     filters = [
         contract.events.PacketOpened.create_filter(fromBlock="latest"),
@@ -45,7 +36,6 @@ def handle_event(event, provider, contract, IPFSClient, model, data, logger):
     event_class = get_event_class(event_name)
     kwargs = dict(event_args)
     kwargs['event'] = event_name
-    print("Arguments:", kwargs)
     event_object = event_class(**kwargs)
     event_object.handle(contract, provider, IPFSClient, model, data)
     event_object.log(logger)

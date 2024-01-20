@@ -14,6 +14,7 @@ import multiaddr
 from ..db.data import Data
 from ..word_generator import Atlas
 import torch
+import traceback
 
 logger = logging.getLogger(__name__)
 
@@ -81,6 +82,7 @@ def loop(provider, contract, filters, IPFSClient, model, data, cfg):
                     handle_event(event, provider, contract, IPFSClient, model, data, logger)
                 except Exception as e:
                     logger.warning(f"Error handling event {idx}: {e}\nWhile handling event: {event}")
+                    traceback.print_exc()
         time.sleep(cfg.poll_interval)
         
 

@@ -9,6 +9,7 @@ import ipfs_api
 import os
 import multiaddr
 from ..db.data import Data
+import traceback 
 
 logger = logging.getLogger(__name__)
 
@@ -72,6 +73,7 @@ def loop(provider, contract, filters, IPFSClient, data, cfg):
                     handle_event(event, provider, contract, IPFSClient, data, logger)
                 except Exception as e:
                     logger.warning(f"Error handling event {idx}: {e}\nWhile handling event: {event}")
+                    traceback.print_exc()
         time.sleep(cfg.poll_interval)
 
 

@@ -1,14 +1,15 @@
 from dataclasses import dataclass
 from abc import abstractmethod, ABC
 from typing import List
-from ..word_generator import Atlas
-from ..utils import utils
 import os
 import json
 import io
 from PIL import Image
-from ..db.data import Data
+import time
 
+from ..word_generator import Atlas
+from ..utils import utils
+from ..db.data import Data
 from ..word_generator.prompt_builder import Prompt
 
 PACKET_SIZE = 8
@@ -71,7 +72,6 @@ class PacketOpened(Event):
                                         "IPFSCid": cid_int,
                                         "promptId": prompt,
                                         "to": self.opener,
-                                        "rarity": rarity,
                                         })\
                                     .build_transaction({
                                         "from": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
@@ -131,7 +131,6 @@ class CreateImage(Event):
         img_byte_arr.close()
 
         # publish the cid on the blockchain
-        # contract.imageMinted(cid, self.cardId, self.creator)
         cid_int = utils.cidToInt256(cid)
 
         call_func = contract.functions.imageMinted(**{
@@ -191,18 +190,13 @@ class WillToBuyPacket(WillToBuyEvent):
         '''
         Pay the seller and send the packet to the buyer
         '''
-        # cur = con.cursor()
-        # get the packet price
-        # print(self.id)
-        # cur.execute(f"SELECT price FROM packets WHERE id=?", (utils.from_int_to_hex_str(self.id),))
-        # price = cur.fetchone()[0]
-        # print(price)
 
-
-        price = data.get_packet(self.id).price
+        packet = data.get_packet(self.id)
+        price = packet.price
+        is_listed = packet.isListed
         
         # check if the buyer sent enough money
-        if self.value >= price:
+        if is_listed and self.value >= price:
             # execute the transfer
 
             # call the function
@@ -221,11 +215,21 @@ class WillToBuyPacket(WillToBuyEvent):
             # wait for transaction receipt
             tx_receipt = provider.eth.wait_for_transaction_receipt(send_tx)
             
-            
-            # contract.transferPacket(self.buyer, self.seller, self.id, price)
         else:
-            # refund the buyer
-            self.refund(contract, provider)
+            if not is_listed:
+                # the tracker didn't have time to update the DB. 
+                # This is an edge case in which list and 
+                # buy are very close, but it can happen.
+                # In theory the buyer (who acts as an attacker) could spam
+                # the network with buy requests to make this happen.
+                # We discourage this behaviour by applying a fee
+                # to the buyer every time he buys a packet.
+                self.refund(contract, provider)
+                raise Exception("Packet is not listed in DB whie it should be")
+            else:
+                # genuine refund
+                # refund the buyer
+                self.refund(contract, provider)
 
 @dataclass
 class WillToBuyPrompt(WillToBuyEvent):
@@ -234,10 +238,13 @@ class WillToBuyPrompt(WillToBuyEvent):
         '''
         Pay the seller and send the packet to the buyer
         '''
-        price = data.get_prompt(self.id).price
+
+        prompt = data.get_prompt(self.id)
+        price = prompt.price
+        is_listed = prompt.isListed
             
         # check if the buyer sent enough money
-        if self.value >= price:
+        if is_listed and self.value >= price:
             # execute the transfer
 
             # call the function
@@ -272,10 +279,12 @@ class WillToBuyImage(WillToBuyEvent):
         '''
         Pay the seller and send the packet to the buyer
         '''
-        price = data.get_image(self.id).price
+        image = data.get_image(self.id)
+        price = image.price
+        is_listed = image.isListed
             
         # check if the buyer sent enough money
-        if self.value >= price:
+        if is_listed and self.value >= price:
             # execute the transfer
             
             # call the function
