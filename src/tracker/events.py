@@ -76,22 +76,17 @@ class PromptCreated(Event):
     to: str
     promptId: int
     IPFSCid: int
-    rarity: int
 
     def handle(self, contract, provider, IPFSClient, data: Data):
         '''
         Add the IPFS hash to the prompt in the database and the "name" of the prompt
         '''
         prompt = Prompt()
-        textCid = int256ToCid(self.IPFSCid)
-        prompt_json = json.loads(IPFSClient.http_client.cat(textCid).decode("utf-8"))
+        promptCid = int256ToCid(self.IPFSCid)
+        prompt_json = json.loads(IPFSClient.http_client.cat(promptCid).decode("utf-8"))
         name = prompt_json['name']
-        prompt.initWithParams(id = self.promptId, 
-                              hash = textCid, 
-                              name = name,
-                              userIdHex = self.to, 
-                              data = data,
-                              rarity = self.rarity)
+        rarity = prompt_json['rarity']
+        prompt.addIPFSHash(self.promptId, promptCid, name, rarity, data)
 
 @dataclass
 class CreateImage(Event):
@@ -106,6 +101,7 @@ class CreateImage(Event):
         image = Image()
         image.initWithParams(id=self.cardId, userIdHex=self.creator)
         image.writeToDb(data)
+        image.freezePrompts(data)
 
 @dataclass
 class ImageCreated(Event):
@@ -119,8 +115,8 @@ class ImageCreated(Event):
         '''
         image = Image()
         imageCid = int256ToCid(self.IPFSCid)
-        image.initWithParams(id=self.imageId, userIdHex=self.creator, hash=imageCid, data=data)
-        image.freezePrompts(data)
+        # image.initWithParams(id=self.imageId, userIdHex=self.creator, hash=imageCid, data=data)
+        image.addIPFSHash(self.imageId, imageCid, data)
         IPFSClient.download(imageCid, path=f"ipfs/image/{self.imageId}.png")
 
 @dataclass

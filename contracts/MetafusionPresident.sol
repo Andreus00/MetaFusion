@@ -32,7 +32,7 @@ contract MetaFusionPresident {
     event PacketForged(address indexed blacksmith, uint32 packetId);
     event PacketOpened(address indexed opener, uint32[] prompts);
 
-    event PromptCreated(uint256 IPFSCid, uint32 promptId, address to, uint8 rarity);
+    event PromptCreated(uint256 IPFSCid, uint32 promptId, address to);
     
     event CreateImage(address indexed creator, uint256 cardId);
     event ImageCreated(uint256 IPFSCid, uint256 imageId, address indexed creator);
@@ -141,8 +141,8 @@ contract MetaFusionPresident {
         emit PacketOpened(msg.sender, prompts);
     }
 
-    function promptMinted(uint256 IPFSCid, uint32 promptId, address to, uint8 rarity) public onlyOwner {
-        emit PromptCreated(IPFSCid, promptId, to, rarity);
+    function promptMinted(uint256 IPFSCid, uint32 promptId, address to) public onlyOwner {
+        emit PromptCreated(IPFSCid, promptId, to);
     }
 
     function _mergePrompts(uint32[NUM_PROMPT_TYPES] memory prompts) private pure returns (uint256) {

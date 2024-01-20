@@ -78,6 +78,12 @@ class Prompt:
 		data.con.commit()
 		cur.close()
 
+	def addIPFSHash(self, id, promptCid, name, rarity, data):
+		cur = data.get_cursor()
+		cur.execute('UPDATE Prompts SET ipfsHash=?, name=?, rarity=? WHERE id=?', (promptCid, name, rarity, from_int_to_hex_str(id)))
+		data.con.commit()
+		cur.close()
+
 	def getPromptIndexInPacket(self):
 		return getInfoFromPromptId(self.id)[0]
 	def getOriginalPacketIndexInCollection(self):
@@ -133,6 +139,12 @@ class Image:
 	def writeToDb(self, data):
 		cur = data.get_cursor()
 		cur.execute('INSERT OR REPLACE INTO Images(id, ipfsHash, isListed, price, userHex, collectionId) VALUES (?, ?, ?, ?, ?, ?)', (from_int_to_hex_str(self.id), self.hash, self.isListed, from_int_to_hex_str(self.price), self.userIdHex, self.getOriginalCollection()))
+		data.con.commit()
+		cur.close()
+	
+	def addIPFSHash(self, id, imageCid, data):
+		cur = data.get_cursor()
+		cur.execute('UPDATE Images SET ipfsHash=? WHERE id=?', (imageCid, from_int_to_hex_str(id)))
 		data.con.commit()
 		cur.close()
 
