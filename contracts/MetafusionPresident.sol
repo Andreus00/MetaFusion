@@ -63,7 +63,7 @@ contract MetaFusionPresident {
     }
 
     modifier isTokenListed(uint256 packetId, ERC721 meta) {
-        require(meta.getApproved(packetId) == address(this), "The packet is not listed!");
+        require(meta.getApproved(packetId) == address(this), "The token is not listed!");
         _;
     }
 
