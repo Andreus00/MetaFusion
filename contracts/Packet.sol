@@ -39,7 +39,7 @@ contract MetaPacket is ERC721 {
 
 	mapping (uint16 => uint16) public alreadyMinted;  // Mapping from collection to the number of packets already minted for that collection. 0 if the collection does not exist.
 
-	uint16 constant MAX_PACKETS_PER_COLLECTION = 1000;  // The maximum number of packets that can be minted for each collection.
+	uint16 constant MAX_PACKETS_PER_COLLECTION = 750;  // The maximum number of packets that can be minted for each collection.
 
 	/////////////// MODIFIERS ///////////////
 

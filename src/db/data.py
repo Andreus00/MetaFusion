@@ -19,6 +19,7 @@ class Packet:
 		self.isListed = res[1]
 		self.price = from_str_hex_to_int_str(res[2])
 		self.userIdHex = res[3]
+		return self
 	def initWithParams(self, id, userIdHex: str, isListed: bool = False, price: int = 0, data=None):
 		self.id: int = id
 		self.isListed: bool = isListed
@@ -64,6 +65,7 @@ class Prompt:
 		self.userIdHex = res[5]
 		self.name = res[6]
 		self.rarity = res[7]
+		return self
 	def initWithParams(self, id: int, userIdHex: str, hash: str = None, name: str = None, rarity: int = None, isListed: bool = False, price: int = 0, isFreezed: bool = False, data=None):
 		self.id: int = id
 		self.hash: str = hash   # IPFS hash
@@ -121,6 +123,7 @@ class Image:
 		self.isListed = res[2]
 		self.price = from_str_hex_to_int_str(res[3])
 		self.userIdHex = res[4]
+		return self
 	
 	def initWithParams(self, id: int, userIdHex: str, hash: str = None, isListed: bool = False, price: int = 0, data=None):
 		self.id: int = id
@@ -138,6 +141,8 @@ class Image:
 				data.freeze_prompt(prompt_id=prompt)
 				
 	def unfreezePrompts(self, data):
+		if isinstance(self.id, str):
+			self.id = from_str_hex_to_int_str(self.id)
 		_, prompts = getInfoFromImageId(self.id)
 		for prompt in prompts:
 			if prompt != 0:
@@ -256,24 +261,30 @@ class Data:
 			cur.close()
 		
 
-	def get_packet(self, packet_id: str):
+	def get_packet(self, packet_id, as_json=False):
+		if isinstance(packet_id, int):
+			packet_id = from_int_to_hex_str(packet_id)
 		cur = self.get_cursor()
 		try:
 			cur.execute('SELECT * FROM Packets WHERE id=?', (packet_id,))
 			res = cur.fetchone()
 			if res is not None:
-				return {
-					"id": res[0],
-					"isListed": res[1],
-					"price": from_str_hex_to_int_str(res[2]),
-					"owner": res[3],
-					"collectionId": res[4],
-					"nft_type": 0
-				}
+				if as_json:
+					return {
+						"id": res[0],
+						"isListed": res[1],
+						"price": from_str_hex_to_int_str(res[2]),
+						"owner": res[3],
+						"collectionId": res[4],
+						"nft_type": 0
+					}
+				return Packet().initWithDb(res)
 		finally:
 			cur.close()
 	
-	def get_prompt(self, prompt_id: str):
+	def get_prompt(self, prompt_id, as_json=False):
+		if isinstance(prompt_id, int):
+			prompt_id = from_int_to_hex_str(prompt_id)
 		if prompt_id == "0x0":
 			return None
 		cur = self.get_cursor()
@@ -281,23 +292,27 @@ class Data:
 			cur.execute('SELECT * FROM Prompts WHERE id=?', (prompt_id,))
 			res = cur.fetchone()
 			if res is not None:
-				return {
-					"id": res[0],
-					"ipfsCid": res[1],
-					"isListed": res[2],
-					"price": from_str_hex_to_int_str(res[3]),
-					"isFreezed": res[4],
-					"owner": res[5],
-					"name": res[6],
-					"category": res[7],
-					"collectionId": res[8],
-					"rarity": res[9],
-					"nft_type": 1
-				}
+				if as_json:
+					return {
+						"id": res[0],
+						"ipfsCid": res[1],
+						"isListed": res[2],
+						"price": from_str_hex_to_int_str(res[3]),
+						"isFreezed": res[4],
+						"owner": res[5],
+						"name": res[6],
+						"category": res[7],
+						"collectionId": res[8],
+						"rarity": res[9],
+						"nft_type": 1
+					}
+				return Prompt().initWithDb(res)
 		finally:
 			cur.close()
 	
-	def get_image(self, image_id: str):
+	def get_image(self, image_id: str, as_json=False):
+		if isinstance(image_id, int):
+			image_id = from_int_to_hex_str(image_id)
 		cur = self.get_cursor()
 		try:
 			cur.execute('SELECT * FROM Images WHERE id=?', (image_id,))
@@ -306,18 +321,20 @@ class Data:
 				# get prompts that are in this image
 				_, prompts = getInfoFromImageId(from_str_hex_to_int_str(image_id))
 
-				return {
-					"id": res[0],
-					"ipfsCid": res[1],
-					"isListed": res[2],
-					"price": from_str_hex_to_int_str(res[3]),
-					"owner": res[4],
-					"collectionId": res[5],
-					"prompts": sorted([
-						self.get_prompt(from_int_to_hex_str(prompt)) for prompt in prompts if prompt != 0
-					], key=lambda x: x["category"]),
-					"nft_type": 2
-				}
+				if as_json:
+					return {
+						"id": res[0],
+						"ipfsCid": res[1],
+						"isListed": res[2],
+						"price": from_str_hex_to_int_str(res[3]),
+						"owner": res[4],
+						"collectionId": res[5],
+						"prompts": sorted([
+							self.get_prompt(from_int_to_hex_str(prompt)) for prompt in prompts if prompt != 0
+						], key=lambda x: x["category"]),
+						"nft_type": 2
+					}
+				return Image().initWithDb(res)
 		finally:
 			cur.close()
 	

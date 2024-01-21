@@ -45,7 +45,7 @@ async def get_user(publicKey: str):
 
 @app.get("/packet/{packetid}")
 async def get_packet(packetid: str, r: Request):
-    packet = database.get_packet(packetid)
+    packet = database.get_packet(packetid, as_json=True)
     if packet is None:
         raise HTTPException(404, detail='packet not found')
     return packet
@@ -66,7 +66,7 @@ async def get_packets(r: Request):
 
 @app.get("/prompt/{promptid}")
 async def get_prompt(promptid: str, r: Request):
-    prompt = database.get_prompt(promptid)
+    prompt = database.get_prompt(promptid, as_json=True)
     if prompt is None:
         raise HTTPException(404, detail='prompt not found')
     return prompt
@@ -95,7 +95,7 @@ def extract_card_info(card: Image):
 
 @app.get("/card/{cardid}")
 async def get_card(cardid: str, r: Request):
-    card = database.get_image(cardid)
+    card = database.get_image(cardid, as_json=True)
     return card
 
     if card is None:
