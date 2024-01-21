@@ -3,20 +3,8 @@
 /**
     This contract implements the cards for the MetaFusion system.
     This is based on the ERC721 standard, but with some modifications.
-
-    A card can only be minted by the oracle, so the mint function must check
-    that the caller is the oracle.
-    The oracle is the only one who can mint new cards.
-
-    The owner of the contract is the only one who can terminate the contract.
-    The owner of a card can decide to burn it and get back the prompts used
-    to mint it. This implies tha the card must track the prompts used to mint it.
-    This is done by storing the prompts in a mapping indexed by the card id.
     
-    The card also has a "seed" which is used to generate the prompts. This
-    seed is stored in a mapping indexed by the card id.
-    
-    Everytime a card is transferred, the prompts must be transferred as well.
+    Functions can only be called by the owner of the contract. In metafusion the owner is the MetaFusionPresident.
 */
 
 pragma solidity ^0.8.19;

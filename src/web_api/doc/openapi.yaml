@@ -28,20 +28,18 @@ paths:
               schema:
                 type: object
                 properties:
-                  user:
-                    $ref: '#/components/schemas/User'
                   packets:
                     type: array
                     items:
                       $ref: '#/components/schemas/Packet'
-                  promp:
+                  prompts:
                     type: array
                     items:
                       $ref: '#/components/schemas/Prompt'
                   cards:
                     type: array
                     items:
-                      $ref: '#/components/schemas/TinyCard'
+                      $ref: '#/components/schemas/Card'
                   transactions:
                       $ref: '#/components/schemas/TransactionHistory'
                   
@@ -58,8 +56,8 @@ paths:
       parameters:
         - name: packetid
           schema:
-            format: uint256
-            type: number
+            format: string
+            type: string
             example: "0x10001"
           in: path
           description: "packet uuid"
@@ -85,8 +83,8 @@ paths:
       parameters:
         - name: packetid
           schema:
-            format: uint256
-            type: number
+            format: string
+            type: string
             example: "0x10001"
           in: path
           description: "packet uuid"
@@ -114,8 +112,8 @@ paths:
       parameters:
         - name: promptid
           schema:
-            format: uint256
-            type: number
+            format: string
+            type: string
             example: "0x20022001"
           in: path
           description: "prompt uuid"
@@ -141,8 +139,8 @@ paths:
       parameters:
         - name: promptid
           schema:
-            format: uint256
-            type: number
+            format: string
+            type: string
             example: "0x20022001"
           in: path
           description: "prompt uuid"
@@ -170,8 +168,8 @@ paths:
       parameters:
         - name: cardid
           schema:
-            format: uint256
-            type: number
+            format: string
+            type: string
             example: "0x60010001400c2001a001400100026001e0018001c001a001eb48a1b59a91906d"
           in: path
           description: "card uuid"
@@ -197,8 +195,8 @@ paths:
       parameters:
         - name: cardid
           schema:
-            format: uint256
-            type: number
+            format: string
+            type: string
             example: "0x60010001400c2001a001400100026001e0018001c001a001eb48a1b59a91906d"
           in: path
           description: "card uuid"
@@ -222,7 +220,7 @@ paths:
       tags: [ "Packet"]
       operationId: Get all the packets 
       summary: Get all the packets available
-      description: "get information about all the packets in the marketplace, regardless of the isListed flag"
+      description: "get information about all the packets in the marketplace, only listed ones"
       responses:
         '201':
           description: Success
@@ -294,10 +292,10 @@ components:
   
     User:
       type: string
-      pattern: /^0x([A-Fa-f0-9]{64})$/
+      # pattern: /^0x([A-Fa-f0-9]{40})$/
       example: "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
-      minimum: 42
-      maximum: 42
+
+    
     
     IpfsCid:
       format: string
@@ -305,12 +303,13 @@ components:
       pattern: "Qm[1-9A-Za-z]{44}[^OIl]"
       example: "QmRn7MN23ZfZoYjts5KAnS6sSos2LpU7F1AfGgLyeakodx"
       
+
     Transaction:
       type: object
       properties:
         id:
-          format: uint256
-          type: number
+          format: string
+          type: string
           example: "0x60010001400c2001a001400100026001e0018001c001a001eb48a1b59a91906d"
         seller:
           $ref: '#/components/schemas/User'
@@ -320,13 +319,20 @@ components:
           type: number
           format:  double
           example: 1.0
+        nft_type:
+          type: number
+          format: enum
+          enum: [0, 1, 2]
+          example: 2
+          description: 0 = packet, 1 = prompt, 2 = card
+
 
     Packet:
       type: object
       properties:
         id:
-          format: uint32
-          type: number
+          format: string
+          type: string
           example: "0x10001"
         isListed:
           format: boolean
@@ -342,13 +348,48 @@ components:
           format: uint32
           type: number
           example: 1
+        nft_type:
+          type: number
+          format: enum
+          enum: [0, 1, 2]
+          example: 0
+          description: 0 = packet, 1 = prompt, 2 = card
+          
+
+
+    TinyPacket:
+      type: object
+      properties:
+        id:
+          format: string
+          type: string
+          example: "0x10001"
+        isListed:
+          format: boolean
+          type: boolean
+          example: false
+        price:
+          type: number
+          format:  double
+          example: 1.0
+        collectionId:
+          format: uint32
+          type: number
+          example: 1
+        nft_type:
+          type: number
+          format: enum
+          enum: [0, 1, 2]
+          example: 0
+          description: 0 = packet, 1 = prompt, 2 = card
     
+
     Prompt:
       type: object
       properties:
         id:
-          format: uint32
-          type: number
+          format: string
+          type: string
           example: "0x20022001"
         ipfsCid:
           $ref: '#/components/schemas/IpfsCid'
@@ -370,7 +411,7 @@ components:
           format: string
           type: string
           example: "cat"
-        type:
+        category:
           format: uint32
           type: number
           example: 0
@@ -379,22 +420,74 @@ components:
         collectionId:
           format: uint32
           type: number
-          example: 1
+          example: 3
         rarity:
           format: uint32
           type: number
           example: 1
           minimum: 0
           maximum: 3
+        nft_type:
+          type: number
+          format: enum
+          enum: [0, 1, 2]
+          example: 1
+          description: 0 = packet, 1 = prompt, 2 = card
 
-          
+    
+    TinyPrompt:
+      type: object
+      properties:
+        id:
+          format: string
+          type: string
+          example: "0x20022001"
+        isListed:
+          format: boolean
+          type: boolean
+          example: true
+        price:
+          format:  double
+          type: number
+          example: 1.0
+        isFreezed:
+          format: boolean
+          type: boolean
+          example: false
+        name:
+          format: string
+          type: string
+          example: "cat"
+        category:
+          format: uint32
+          type: number
+          example: 0
+          minimum: 0
+          maximum: 5
+        collectionId:
+          format: uint32
+          type: number
+          example: 3
+        rarity:
+          format: uint32
+          type: number
+          example: 1
+          minimum: 0
+          maximum: 3
+        nft_type:
+          type: number
+          format: enum
+          enum: [0, 1, 2]
+          example: 1
+          description: 0 = packet, 1 = prompt, 2 = card
+
 
     Card:
       type: object
       properties:
         id:
-          format: uint256
-          type: number
+          format: string
+          type: string
           example: "0x60010001400c2001a001400100026001e0018001c001a001eb48a1b59a91906d"
         ipfsCid:
           $ref: '#/components/schemas/IpfsCid'
@@ -419,14 +512,20 @@ components:
           minimum: 6
           maximum: 6
           description: all the prompts used for minting the image
+        nft_type:
+          type: number
+          format: enum
+          enum: [0, 1, 2]
+          example: 2
+          description: 0 = packet, 1 = prompt, 2 = card
     
 
     TinyCard:
       type: object
       properties:
         id:
-          format: uint32
-          type: number
+          format: string
+          type: string
           example: "0x60010001400c2001a001400100026001e0018001c001a001eb48a1b59a91906d"
         isListed:
           format: boolean
@@ -440,6 +539,12 @@ components:
           format: uint32
           type: number
           example: 1
+        nft_type:
+          type: number
+          format: enum
+          enum: [0, 1, 2]
+          example: 2
+          description: 0 = packet, 1 = prompt, 2 = card
     
     
     TransactionHistory:

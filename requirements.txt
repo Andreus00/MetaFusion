@@ -6,3 +6,5 @@ numpy
 IPFS-Toolkit
 hydra-core
 accelerate
+uvicorn[standard]
+fastapi

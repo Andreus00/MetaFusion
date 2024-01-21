@@ -1,0 +1,5 @@
+defaults:
+  - hydra: defaults
+  - api: server
+  - db: data
+
