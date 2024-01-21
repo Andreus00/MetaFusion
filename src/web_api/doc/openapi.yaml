@@ -258,7 +258,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Packet'
+                  $ref: '#/components/schemas/TinyPacket'
                   
         '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/UserNotAuthorized' }
@@ -279,7 +279,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Prompt'
+                  $ref: '#/components/schemas/TinyPrompt'
                   
         '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/UserNotAuthorized' }

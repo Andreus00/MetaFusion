@@ -362,17 +362,18 @@ class Data:
 	def get_all_packets(self, only_listed=True):
 		cur = self.get_cursor()
 		try:
-			if only_listed:
-				cur.execute('SELECT id, isListed, price, collectionId FROM Packets WHERE isListed=1')
-			else:
-				cur.execute('SELECT * FROM Packets')
-			result = cur.fetchone()
+			cur.execute('SELECT id, isListed, price, collectionId FROM Packets WHERE isListed=1')
+			result = cur.fetchall()
 			response = []
-			while result is not None:
-				obj = Packet()
-				obj.initWithDb(result)
-				response.append(obj)
-				result = cur.fetchone()
+			if result is not None:
+				for row in result:
+					response.append({
+						"id": row[0], 
+						"isListed": row[1], 
+						"price": from_str_hex_to_int_str(row[2]), 
+						"collectionId": row[3],
+						"nft_type": 0
+					})
 			return response
 		finally:
 			cur.close()
@@ -380,14 +381,22 @@ class Data:
 	def get_all_prompts(self, only_listed=True):
 		cur = self.get_cursor()
 		try:
-			cur.execute('SELECT * FROM Prompts WHERE isListed=1')
-			res = cur.fetchone()
+			cur.execute('SELECT id, isListed, price, isFreezed, name, category, collectionId, rarity FROM Prompts WHERE isListed=1')
+			res = cur.fetchall()
 			ret = []
-			while res is not None:
-				obj = Prompt()
-				obj.initWithDb(res)
-				ret.append(obj)
-				res = cur.fetchone()
+			if res is not None:
+				for row in res:
+					ret.append({
+						"id": row[0],
+						"isListed": row[1],
+						"price": from_str_hex_to_int_str(row[2]),
+						"isFreezed": row[3],
+						"name": row[4],
+						"category": row[5],
+						"collectionId": row[6],
+						"rarity": row[7],
+						"nft_type": 1
+					})
 			return ret
 		finally:
 			cur.close()
@@ -396,7 +405,7 @@ class Data:
 	def get_all_images(self, only_listed=True):
 		cur = self.get_cursor()
 		try:
-			cur.execute('SELECT id, isListed, price, collectionId FROM Images WHERE isListed=1')
+			cur.execute('SELECT id, isListed, price, collectionId FROM Images WHERE isListed=1z')
 			res = cur.fetchall()
 			ret = []
 			if res is not None:
