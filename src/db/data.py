@@ -396,7 +396,7 @@ class Data:
 	def get_all_images(self, only_listed=True):
 		cur = self.get_cursor()
 		try:
-			cur.execute('SELECT id, isListed, price, collectionId FROM Images')
+			cur.execute('SELECT id, isListed, price, collectionId FROM Images WHERE isListed=1')
 			res = cur.fetchall()
 			ret = []
 			if res is not None:
