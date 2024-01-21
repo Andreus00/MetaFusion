@@ -230,7 +230,7 @@ class Data:
 					"price": from_str_hex_to_int_str(row[2]), 
 					"isFreezed": row[3], 
 					"name": row[4], 
-					"type": row[5], 
+					"category": row[5], 
 					"collectionId": row[6], 
 					"rarity": row[7], 
 					"nft_type": 1})
