@@ -380,18 +380,18 @@ class Data:
 	def get_all_images(self, only_listed=True):
 		cur = self.get_cursor()
 		try:
-			if only_listed:
-				cur.execute('SELECT * FROM Images WHERE isListed=1')
-			else:
-				cur.execute('SELECT * FROM Images')
-			res = cur.fetchone()
+			cur.execute('SELECT id, isListed, price, collectionId FROM Images WHERE isListed=1')
+			res = cur.fetchall()
 			ret = []
-			while res is not None:
-				print(res)
-				obj = Image()
-				obj.initWithDb(res)
-				ret.append(obj)
-				res = cur.fetchone()
+			if res is not None:
+				for row in res:
+					ret.append({
+						"id": row[0],
+						"isListed": row[1],
+						"price": row[2],
+						"collectionId": row[3],
+						"nft_type": 2
+					})
 			return ret
 		finally:
 			cur.close()
