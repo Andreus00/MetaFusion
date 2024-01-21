@@ -1,0 +1,573 @@
+openapi: 3.0.0
+servers:
+  - url: 'http://localhost:3000'
+info:
+  title: MetaFusion web API 
+  description: Metafusion NFT market backend REST APIs
+  version: 1.0.0
+
+paths:
+  /user/{publicKey}:
+    get: 
+      tags: [ "User"]
+      operationId: Get user's 
+      summary: Get user's info
+      description: "Get user's packets, prompts, cards and past transactions"
+      parameters:
+        - name: publicKey
+          schema:
+            $ref: '#/components/schemas/User'
+          in: path
+          description: "User's public key"
+          required: true
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  packets:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TinyPacket'
+                  prompts:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TinyPrompt'
+                  cards:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TinyCard'
+                  transactions:
+                      $ref: '#/components/schemas/TransactionHistory'
+                  
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/UserNotAuthorized' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+  
+  /packet/{packetid}:
+    get: 
+      tags: [ "Packet"]
+      operationId: Get packet info 
+      summary: Get packet's informations
+      description: "get all packet informations"
+      parameters:
+        - name: packetid
+          schema:
+            format: string
+            type: string
+            example: "0x10001"
+          in: path
+          description: "packet uuid"
+          required: true
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Packet'
+                  
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/UserNotAuthorized' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+    
+  /packet/{packetid}/transactions:
+    get:
+      tags: [ "Packet"]
+      operationId: Get packet transactions
+      summary: Get packet's past transactions
+      description: "get packet's past transactions."
+      parameters:
+        - name: packetid
+          schema:
+            format: string
+            type: string
+            example: "0x10001"
+          in: path
+          description: "packet uuid"
+          required: true
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Transaction'
+                  
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/UserNotAuthorized' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+
+  /prompt/{promptid}:
+    get: 
+      tags: [ "Prompt"]
+      operationId: Get prompt info 
+      summary: Get prompt's informations
+      description: "get all prompt informations"
+      parameters:
+        - name: promptid
+          schema:
+            format: string
+            type: string
+            example: "0x20022001"
+          in: path
+          description: "prompt uuid"
+          required: true
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Prompt'
+                  
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/UserNotAuthorized' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+    
+  /prompt/{promptid}/transactions:
+    get:
+      tags: [ "Prompt"]
+      operationId: Get prompt transactions
+      summary: Get prompt's past transactions
+      description: "get prompt's past transactions."
+      parameters:
+        - name: promptid
+          schema:
+            format: string
+            type: string
+            example: "0x20022001"
+          in: path
+          description: "prompt uuid"
+          required: true
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Transaction'
+                  
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/UserNotAuthorized' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+  
+  /card/{cardid}:
+    get:
+      tags: [ "Card"]
+      operationId: Get card info 
+      summary: Get card's informations
+      description: "get all card informations"
+      parameters:
+        - name: cardid
+          schema:
+            format: string
+            type: string
+            example: "0x60010001400c2001a001400100026001e0018001c001a001eb48a1b59a91906d"
+          in: path
+          description: "card uuid"
+          required: true
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Card'
+                  
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/UserNotAuthorized' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+    
+  /card/{cardid}/transactions:
+    get:
+      tags: [ "Card"]
+      operationId: Get card transactions
+      summary: Get card's past transactions
+      description: "get card's past transactions."
+      parameters:
+        - name: cardid
+          schema:
+            format: string
+            type: string
+            example: "0x60010001400c2001a001400100026001e0018001c001a001eb48a1b59a91906d"
+          in: path
+          description: "card uuid"
+          required: true
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Transaction'
+                  
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/UserNotAuthorized' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+  
+  /packets/:
+    get:
+      tags: [ "Packet"]
+      operationId: Get all the packets 
+      summary: Get all the packets available
+      description: "get information about all the packets in the marketplace, only listed ones"
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Packet'
+                  
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/UserNotAuthorized' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+  
+
+  /prompts/:
+    get:
+      tags: [ "Prompt"]
+      operationId: Get all the prompts 
+      summary: Get all the prompts
+      description: "get all prompts informations"
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Prompt'
+                  
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/UserNotAuthorized' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+    
+  /cards/:
+    get:
+      tags: [ "Card"]
+      operationId: Get all the cards 
+      summary: Get all the cards
+      description: "get all cards informations"
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TinyCard'
+                  
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/UserNotAuthorized' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        
+components:
+  parameters:
+      XId:
+        schema:
+          type: integer
+        name: X-Id
+        in: header
+        required: true
+        description: App user id readable version ("semantic version" format)
+        allowEmptyValue: false
+        example: 1
+
+  schemas:
+  
+    User:
+      type: string
+      # pattern: /^0x([A-Fa-f0-9]{40})$/
+      example: "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+
+    
+    
+    IpfsCid:
+      format: string
+      type: string
+      pattern: "Qm[1-9A-Za-z]{44}[^OIl]"
+      example: "QmRn7MN23ZfZoYjts5KAnS6sSos2LpU7F1AfGgLyeakodx"
+      
+
+    Transaction:
+      type: object
+      properties:
+        id:
+          format: string
+          type: string
+          example: "0x60010001400c2001a001400100026001e0018001c001a001eb48a1b59a91906d"
+        seller:
+          $ref: '#/components/schemas/User'
+        buyer:
+          $ref: '#/components/schemas/User'
+        price:
+          type: number
+          format:  double
+          example: 1.0
+        nft_type:
+          type: number
+          format: enum
+          enum: [0, 1, 2]
+          example: 2
+          description: 0 = packet, 1 = prompt, 2 = card
+
+
+    Packet:
+      type: object
+      properties:
+        id:
+          format: string
+          type: string
+          example: "0x10001"
+        isListed:
+          format: boolean
+          type: boolean
+          example: false
+        price:
+          type: number
+          format:  double
+          example: 1.0
+        owner:
+          $ref: '#/components/schemas/User'
+        collectionId:
+          format: uint32
+          type: number
+          example: 1
+        nft_type:
+          type: number
+          format: enum
+          enum: [0, 1, 2]
+          example: 0
+          description: 0 = packet, 1 = prompt, 2 = card
+          
+
+
+    TinyPacket:
+      type: object
+      properties:
+        id:
+          format: string
+          type: string
+          example: "0x10001"
+        isListed:
+          format: boolean
+          type: boolean
+          example: false
+        price:
+          type: number
+          format:  double
+          example: 1.0
+        collectionId:
+          format: uint32
+          type: number
+          example: 1
+        nft_type:
+          type: number
+          format: enum
+          enum: [0, 1, 2]
+          example: 0
+          description: 0 = packet, 1 = prompt, 2 = card
+    
+
+    Prompt:
+      type: object
+      properties:
+        id:
+          format: string
+          type: string
+          example: "0x20022001"
+        ipfsCid:
+          $ref: '#/components/schemas/IpfsCid'
+        isListed:
+          format: boolean
+          type: boolean
+          example: true
+        price:
+          format:  double
+          type: number
+          example: 1.0
+        isFreezed:
+          format: boolean
+          type: boolean
+          example: false
+        owner:
+          $ref: '#/components/schemas/User'
+        name:
+          format: string
+          type: string
+          example: "cat"
+        category:
+          format: uint32
+          type: number
+          example: 0
+          minimum: 0
+          maximum: 5
+        collectionId:
+          format: uint32
+          type: number
+          example: 3
+        rarity:
+          format: uint32
+          type: number
+          example: 1
+          minimum: 0
+          maximum: 3
+        nft_type:
+          type: number
+          format: enum
+          enum: [0, 1, 2]
+          example: 1
+          description: 0 = packet, 1 = prompt, 2 = card
+
+    
+    TinyPrompt:
+      type: object
+      properties:
+        id:
+          format: string
+          type: string
+          example: "0x20022001"
+        isListed:
+          format: boolean
+          type: boolean
+          example: true
+        price:
+          format:  double
+          type: number
+          example: 1.0
+        isFreezed:
+          format: boolean
+          type: boolean
+          example: false
+        name:
+          format: string
+          type: string
+          example: "cat"
+        category:
+          format: uint32
+          type: number
+          example: 0
+          minimum: 0
+          maximum: 5
+        collectionId:
+          format: uint32
+          type: number
+          example: 3
+        rarity:
+          format: uint32
+          type: number
+          example: 1
+          minimum: 0
+          maximum: 3
+        nft_type:
+          type: number
+          format: enum
+          enum: [0, 1, 2]
+          example: 1
+          description: 0 = packet, 1 = prompt, 2 = card
+
+
+    Card:
+      type: object
+      properties:
+        id:
+          format: string
+          type: string
+          example: "0x60010001400c2001a001400100026001e0018001c001a001eb48a1b59a91906d"
+        ipfsCid:
+          $ref: '#/components/schemas/IpfsCid'
+        isListed:
+          format: boolean
+          type: boolean
+          example: false
+        price:
+          type: number
+          format:  double
+          example: 1.0
+        owner:
+          $ref: '#/components/schemas/User'
+        collectionId:
+          format: uint32
+          type: number
+          example: 1
+        prompts: 
+          type: array
+          items:
+            $ref: '#/components/schemas/Prompt'
+          minimum: 6
+          maximum: 6
+          description: all the prompts used for minting the image
+        nft_type:
+          type: number
+          format: enum
+          enum: [0, 1, 2]
+          example: 2
+          description: 0 = packet, 1 = prompt, 2 = card
+    
+
+    TinyCard:
+      type: object
+      properties:
+        id:
+          format: string
+          type: string
+          example: "0x60010001400c2001a001400100026001e0018001c001a001eb48a1b59a91906d"
+        isListed:
+          format: boolean
+          type: boolean
+          example: false
+        price:
+          type: number
+          format:  double
+          example: 1.0
+        collectionId:
+          format: uint32
+          type: number
+          example: 1
+        nft_type:
+          type: number
+          format: enum
+          enum: [0, 1, 2]
+          example: 2
+          description: 0 = packet, 1 = prompt, 2 = card
+    
+    
+    TransactionHistory:
+      type: array
+      items:
+        $ref: '#/components/schemas/Transaction'
+      
+
+  
+  responses:
+    NotFound:
+      description: The requested resource can't be found
+    UserNotAuthorized:
+      description: The access token is missing or it's expired
+    Forbidden:
+      description: The user is not authorized to do this operation
+    BadRequest:
+      description: The request was not compliant with the documentation (eg. missing fields, etc)
+    InternalServerError:
+      description: The server encountered an internal error. Further info in server logs
+    Conflict:
+      description: The server encountered a conflict. Further info in server logs
+    PreconditionFailed:
+      description: The condition defined hasn't been fulfilled
+    PaymentRequired:
+      description: The request cannot be processed until the client makes a payment.

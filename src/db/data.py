@@ -7,10 +7,12 @@ from ..utils.utils import *
 from .database import CreateDatabase, DatabaseConnection
 
 class Packet:
-	id: int
-	isListed: bool
-	price: int
-	userIdHex: str
+
+	def __init__(self):
+		self.id: int = 0
+		self.isListed: bool = False
+		self.price: int = 0
+		self.userIdHex: str = ''
 
 	def initWithDb(self, res):
 		self.id = from_str_hex_to_int_str(res[0])
@@ -20,10 +22,10 @@ class Packet:
 	def initWithParams(self, id, userIdHex: str, isListed: bool = False, price: int = 0, data=None):
 		self.id: int = id
 		self.isListed: bool = isListed
-		self.price: int = price
-		self.userIdHex = userIdHex
+		self.price: int = price 
+		self.userIdHex = userIdHex 
 		if data is not None:
-			self.writeToDb(data)
+			self.writeToDb(data) 
 	
 	def writeToDb(self, data):
 		cur = data.get_cursor()
@@ -42,17 +44,19 @@ class Packet:
 		return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True)
 
 class Prompt:
-	id: int
-	hash: str   # IPFS hash
-	isListed: bool
-	price: int
-	isFreezed: bool
-	userIdHex: str
-	name: str
-	rarity: int
+
+	def __init__(self):
+		self.id: int = 0
+		self.hash: str = ''
+		self.isListed: bool = False
+		self.price: int = 0
+		self.userIdHex: str = ''
+		self.isFreezed = 0
+		self.name = ''
+		self.rarity = 0
 	
 	def initWithDb(self, res):
-		self.id = from_str_hex_to_int_str(res[0])
+		self.id = res[0]
 		self.hash = res[1]
 		self.isListed = res[2]
 		self.price = from_str_hex_to_int_str(res[3])
@@ -103,18 +107,21 @@ class Prompt:
 		return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True)
 
 class Image:
-	id: int
-	hash: str   # IPFS hash
-	isListed: bool
-	price: int
-	userIdHex: str
+
+	def __init__(self):
+		self.id: int = 0
+		self.hash: str = ''
+		self.isListed: bool = False
+		self.price: int = 0
+		self.userIdHex: str = ''
 
 	def initWithDb(self, res):
-		self.id = from_str_hex_to_int_str(res[0])
+		self.id = res[0]
 		self.hash = res[1]
 		self.isListed = res[2]
 		self.price = from_str_hex_to_int_str(res[3])
 		self.userIdHex = res[4]
+	
 	def initWithParams(self, id: int, userIdHex: str, hash: str = None, isListed: bool = False, price: int = 0, data=None):
 		self.id: int = id
 		self.hash: str = hash   # IPFS hash
@@ -193,86 +200,105 @@ class Data:
 		return self.con().cursor()
 
 
-	def get_packets_id_of(self, userIdHex: str):
+	def get_packets_id_of(self, userIdHex: str, tiny=False):
 		cur = self.get_cursor()
 		try:
-			ret = []
-			cur.execute('SELECT * FROM Packets WHERE userHex=?', (userIdHex,))
-			res = cur.fetchone()
-			while res is not None:
-				obj = Packet()
-				obj.initWithDb(res)
-				ret.append(obj)
-				res = cur.fetchone()
-			return ret
+			result = []
+			cur.execute('SELECT id, isListed, price, collectionId FROM Packets WHERE userHex=?', (userIdHex,))
+			query_result = cur.fetchall()
+			for row in query_result:
+				result.append({"id": row[0], "isListed": row[1], "price": row[2], "collectionId": row[3], "nft_type": 0})
+			return result
 		finally:
 			cur.close()
 	
-	def get_prompts_id_of(self, userIdHex: str):
+	def get_prompts_id_of(self, userIdHex: str, tiny=False):
 		cur = self.get_cursor()
 		try:
-			ret = []
-			cur.execute('SELECT * FROM Prompts WHERE userHex=?', (userIdHex,))
-			res = cur.fetchone()
-			while res is not None:
-				obj = Prompt()
-				obj.initWithDb(res)
-				ret.append(obj)
-				res = cur.fetchone()
-			return ret
+			result = []
+			cur.execute('SELECT id, isListed, price, isFreezed, name, type, collectionId, rarity FROM Prompts WHERE userHex=?', (userIdHex,))
+			query_result = cur.fetchall()
+			for row in query_result:
+				result.append({"id": row[0], "isListed": row[1], "price": row[2], "isFreezed": row[3], "name": row[4], "type": row[5], "collectionId": row[6], "rarity": row[7], "nft_type": 1})
+			return result
 		finally:
 			cur.close()
 	
-	def get_images_id_of(self, userIdHex: str):
+	def get_images_id_of(self, userIdHex: str, tiny=False):
 		cur = self.get_cursor()
 		try:
-			ret = []
-			cur.execute('SELECT * FROM Images WHERE userHex=?', (userIdHex,))
-			res = cur.fetchone()
-			while res is not None:
-				obj = Image()
-				obj.initWithDb(res)
-				ret.append(obj)
-				res = cur.fetchone()
-			return ret
+			result = []
+			cur.execute('SELECT id, isListed, price, collectionId FROM Images WHERE userHex=?', (userIdHex,))
+			query_result = cur.fetchall()
+			for row in query_result:
+				result.append({"id": row[0], "isListed": row[1], "price": row[2], "collectionId": row[3], "nft_type": 2})
+			return result
 		finally:
 			cur.close()
 		
 
-	def get_packet(self, packet_id: int):
+	def get_packet(self, packet_id: str):
 		cur = self.get_cursor()
 		try:
-			cur.execute('SELECT * FROM Packets WHERE id=?', (from_int_to_hex_str(packet_id),))
+			cur.execute('SELECT * FROM Packets WHERE id=?', (packet_id,))
 			res = cur.fetchone()
 			if res is not None:
-				print(res)
-				ret = Packet()
-				ret.initWithDb(res)
-				return ret
+				return {
+					"id": res[0],
+					"isListed": res[1],
+					"price": res[2],
+					"owner": res[3],
+					"collectionId": res[4],
+					"nft_type": 0
+				}
 		finally:
 			cur.close()
 	
-	def get_prompt(self, prompt_id: int):
+	def get_prompt(self, prompt_id: str):
+		if prompt_id == "0x0":
+			return None
 		cur = self.get_cursor()
 		try:
-			cur.execute('SELECT * FROM Prompts WHERE id=?', (from_int_to_hex_str(prompt_id),))
+			cur.execute('SELECT * FROM Prompts WHERE id=?', (prompt_id,))
 			res = cur.fetchone()
 			if res is not None:
-				ret = Prompt()
-				ret.initWithDb(res)
-				return ret
+				return {
+					"id": res[0],
+					"ipfsCid": res[1],
+					"isListed": res[2],
+					"price": res[3],
+					"isFreezed": res[4],
+					"owner": res[5],
+					"name": res[6],
+					"category": res[7],
+					"collectionId": res[8],
+					"rarity": res[9],
+					"nft_type": 1
+				}
 		finally:
 			cur.close()
 	
-	def get_image(self, image_id: int):
+	def get_image(self, image_id: str):
 		cur = self.get_cursor()
 		try:
-			cur.execute('SELECT * FROM Images WHERE id=?', (from_int_to_hex_str(image_id),))
+			cur.execute('SELECT * FROM Images WHERE id=?', (image_id,))
 			res = cur.fetchone()
 			if res is not None:
-				ret = Image()
-				ret.initWithDb(res)
-				return ret
+				# get prompts that are in this image
+				_, prompts = getInfoFromImageId(from_str_hex_to_int_str(image_id))
+
+				return {
+					"id": res[0],
+					"ipfsCid": res[1],
+					"isListed": res[2],
+					"price": res[3],
+					"owner": res[4],
+					"collectionId": res[5],
+					"prompts": sorted([
+						self.get_prompt(from_int_to_hex_str(prompt)) for prompt in prompts if prompt != 0
+					], key=lambda x: x["category"]),
+					"nft_type": 2
+				}
 		finally:
 			cur.close()
 	
@@ -304,35 +330,41 @@ class Data:
 	def is_image_listed(self, image_id: int):
 		cur = self.get_cursor()
 		try:
-			cur.execute('SELECT COUNT(DISTINCT ID) as c FROM Images WHERE isListed=1 and id=?', (from_int_to_hex_str(image_id),))
+			cur.execute('SELECT isListed FROM Images WHERE id=?', (from_int_to_hex_str(image_id),))
 			# cur.execute('SELECT isListed FROM Images WHERE id=? LIMIT 1', (from_int_to_hex_str(packet_id),))
 			res = cur.fetchone()
 			if res is not None:
-				return res[0]
+				return int(res[0])
 			return False
 		finally:
 			cur.close()
 	
 
-	def get_all_packets(self):
+	def get_all_packets(self, only_listed=True):
 		cur = self.get_cursor()
 		try:
-			cur.execute('SELECT * FROM Packets')
-			res = cur.fetchone()
-			ret = []
-			while res is not None:
+			if only_listed:
+				cur.execute('SELECT id, isListed, price, collectionId FROM Packets WHERE isListed=1')
+			else:
+				cur.execute('SELECT * FROM Packets')
+			result = cur.fetchone()
+			response = []
+			while result is not None:
 				obj = Packet()
-				obj.initWithDb(res)
-				ret.append(obj)
-				res = cur.fetchone()
-			return ret
+				obj.initWithDb(result)
+				response.append(obj)
+				result = cur.fetchone()
+			return response
 		finally:
 			cur.close()
 	
-	def get_all_prompts(self):
+	def get_all_prompts(self, only_listed=True):
 		cur = self.get_cursor()
 		try:
-			cur.execute('SELECT * FROM Promps')
+			if only_listed:
+				cur.execute('SELECT * FROM Prompts WHERE isListed=1')
+			else:
+				cur.execute('SELECT * FROM Prompts')
 			res = cur.fetchone()
 			ret = []
 			while res is not None:
@@ -345,13 +377,17 @@ class Data:
 			cur.close()
 
 	
-	def get_all_images(self):
+	def get_all_images(self, only_listed=True):
 		cur = self.get_cursor()
 		try:
-			cur.execute('SELECT * FROM Images')
+			if only_listed:
+				cur.execute('SELECT * FROM Images WHERE isListed=1')
+			else:
+				cur.execute('SELECT * FROM Images')
 			res = cur.fetchone()
 			ret = []
 			while res is not None:
+				print(res)
 				obj = Image()
 				obj.initWithDb(res)
 				ret.append(obj)
@@ -459,11 +495,11 @@ class Data:
 	def addTransferEvent(self, objId: int, from_user_id: str, to_user_id: str, objType):
 		obj = None
 		if objType == 0:
-			obj = self.get_packet(objId)
+			obj = self.get_packet(from_int_to_hex_str(objId))
 		elif objType == 1:
-			obj = self.get_prompt(objId)
+			obj = self.get_prompt(from_int_to_hex_str(objId))
 		elif objType == 2:
-			obj = self.get_image(objId)
+			obj = self.get_image(from_int_to_hex_str(objId))
 		if(obj is None):
 			print("[addTransferEvent] INVALID OBJ TYPE!!!")
 			return
@@ -476,31 +512,29 @@ class Data:
 		finally:
 			cur.close()
 
-	def getPacketTransferEvent(self, objId: int):
+	def get_token_transfer_events(self, objId: str):
 		cur = self.get_cursor()
 		try:
-			cur.execute('SELECT userFromHex, userToHex, price FROM SellEvents WHERE objId=? and type=?', (objId, 0))
-			res = cur.fetchone()
-			if res is not None:
-				return {"from": from_str_hex_to_int_str(res[0]), "to": from_str_hex_to_int_str(res[1]), "price": res[2]}
+			cur.execute('SELECT objId, userFromHex, userToHex, price, type FROM SellEvents WHERE objId=? ORDER BY id', (objId,))
+			result = cur.fetchall()
+			if result is not None:
+				response = []
+				for row in result:
+					response.append({"id": row[0], "seller": row[1], "buyer": row[2], "price": row[3], "type": row[4]})
+				return response
 		finally:
 			cur.close()
-	def getPromptTransferEvent(self, objId: int):
+
+	def get_user_transfer_events(self, user_id: str):
 		cur = self.get_cursor()
 		try:
-			cur.execute('SELECT userFromHex, userToHex, price FROM SellEvents WHERE objId=? and type=?', (from_int_to_hex_str(objId), 1))
-			res = cur.fetchone()
-			if res is not None:
-				return {"from": from_str_hex_to_int_str(res[0]), "to": from_str_hex_to_int_str(res[1]), "price": res[2]}
-		finally:
-			cur.close()
-	def getImageTransferEvent(self, objId: int):
-		cur = self.get_cursor()
-		try:
-			cur.execute('SELECT userFromHex, userToHex, price FROM SellEvents WHERE objId=? and type=?', (from_int_to_hex_str(objId), 2))
-			res = cur.fetchone()
-			if res is not None:
-				return {"from": from_str_hex_to_int_str(res[0]), "to": from_str_hex_to_int_str(res[1]), "price": res[2]}
+			cur.execute('SELECT objId, userFromHex, userToHex, price, type FROM SellEvents WHERE userFromHex=? or userToHex=? ORDER BY id', (user_id, user_id))
+			result = cur.fetchall()
+			if result is not None:
+				response = []
+				for row in result:
+					response.append({"id": row[0], "seller": row[1], "buyer": row[2], "price": row[3], "type": row[4]})
+				return response
 		finally:
 			cur.close()
 
@@ -533,6 +567,13 @@ class Data:
 			return True
 		finally:
 			cur.close()
+
+	def get_user(self, user_id: str):
+		user_packets = self.get_packets_id_of(user_id, tiny=True)
+		user_prompts = self.get_prompts_id_of(user_id, tiny=True)
+		user_images = self.get_images_id_of(user_id, tiny=True)
+		user_transactions = self.get_user_transfer_events(user_id)
+		return user_packets, user_prompts, user_images, user_transactions
 		
 	def fromJson(self, data):
 		obj = json.loads(data)

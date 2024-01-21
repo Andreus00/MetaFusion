@@ -11,4 +11,11 @@ REPORT_GAS=true npx hardhat test
 npx hardhat node
 npx hardhat run scripts/deploy.ts
 ```
-  
+
+## Webapi server
+The webapi server expose some rest api using Fast API package
+install dependencies with following commands:
+```shell
+pip install fastapi
+pip install "uvicorn[standard]"
+```
