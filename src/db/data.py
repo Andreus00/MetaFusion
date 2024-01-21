@@ -207,7 +207,12 @@ class Data:
 			cur.execute('SELECT id, isListed, price, collectionId FROM Packets WHERE userHex=?', (userIdHex,))
 			query_result = cur.fetchall()
 			for row in query_result:
-				result.append({"id": row[0], "isListed": row[1], "price": row[2], "collectionId": row[3], "nft_type": 0})
+				result.append({
+					"id": row[0], 
+					"isListed": row[1], 
+					"price": from_str_hex_to_int_str(row[2]), 
+					"collectionId": row[3],
+					"nft_type": 0})
 			return result
 		finally:
 			cur.close()
@@ -219,7 +224,16 @@ class Data:
 			cur.execute('SELECT id, isListed, price, isFreezed, name, type, collectionId, rarity FROM Prompts WHERE userHex=?', (userIdHex,))
 			query_result = cur.fetchall()
 			for row in query_result:
-				result.append({"id": row[0], "isListed": row[1], "price": row[2], "isFreezed": row[3], "name": row[4], "type": row[5], "collectionId": row[6], "rarity": row[7], "nft_type": 1})
+				result.append({
+					"id": row[0], 
+					"isListed": row[1], 
+					"price": from_str_hex_to_int_str(row[2]), 
+					"isFreezed": row[3], 
+					"name": row[4], 
+					"type": row[5], 
+					"collectionId": row[6], 
+					"rarity": row[7], 
+					"nft_type": 1})
 			return result
 		finally:
 			cur.close()
@@ -231,7 +245,12 @@ class Data:
 			cur.execute('SELECT id, isListed, price, collectionId FROM Images WHERE userHex=?', (userIdHex,))
 			query_result = cur.fetchall()
 			for row in query_result:
-				result.append({"id": row[0], "isListed": row[1], "price": row[2], "collectionId": row[3], "nft_type": 2})
+				result.append({
+					"id": row[0], 
+					"isListed": row[1], 
+					"price": from_str_hex_to_int_str(row[2]), 
+					"collectionId": row[3],
+					"nft_type": 2})
 			return result
 		finally:
 			cur.close()
@@ -246,7 +265,7 @@ class Data:
 				return {
 					"id": res[0],
 					"isListed": res[1],
-					"price": res[2],
+					"price": from_str_hex_to_int_str(res[2]),
 					"owner": res[3],
 					"collectionId": res[4],
 					"nft_type": 0
@@ -266,7 +285,7 @@ class Data:
 					"id": res[0],
 					"ipfsCid": res[1],
 					"isListed": res[2],
-					"price": res[3],
+					"price": from_str_hex_to_int_str(res[3]),
 					"isFreezed": res[4],
 					"owner": res[5],
 					"name": res[6],
@@ -291,7 +310,7 @@ class Data:
 					"id": res[0],
 					"ipfsCid": res[1],
 					"isListed": res[2],
-					"price": res[3],
+					"price": from_str_hex_to_int_str(res[3]),
 					"owner": res[4],
 					"collectionId": res[5],
 					"prompts": sorted([
@@ -361,10 +380,7 @@ class Data:
 	def get_all_prompts(self, only_listed=True):
 		cur = self.get_cursor()
 		try:
-			if only_listed:
-				cur.execute('SELECT * FROM Prompts WHERE isListed=1')
-			else:
-				cur.execute('SELECT * FROM Prompts')
+			cur.execute('SELECT * FROM Prompts WHERE isListed=1')
 			res = cur.fetchone()
 			ret = []
 			while res is not None:
@@ -380,7 +396,7 @@ class Data:
 	def get_all_images(self, only_listed=True):
 		cur = self.get_cursor()
 		try:
-			cur.execute('SELECT id, isListed, price, collectionId FROM Images WHERE isListed=1')
+			cur.execute('SELECT id, isListed, price, collectionId FROM Images')
 			res = cur.fetchall()
 			ret = []
 			if res is not None:
@@ -388,7 +404,7 @@ class Data:
 					ret.append({
 						"id": row[0],
 						"isListed": row[1],
-						"price": row[2],
+						"price": from_str_hex_to_int_str(row[2]),
 						"collectionId": row[3],
 						"nft_type": 2
 					})
@@ -520,7 +536,12 @@ class Data:
 			if result is not None:
 				response = []
 				for row in result:
-					response.append({"id": row[0], "seller": row[1], "buyer": row[2], "price": row[3], "type": row[4]})
+					response.append({
+						"id": row[0], 
+					  	"seller": row[1], 
+						"buyer": row[2], 
+						"price": from_str_hex_to_int_str(row[3]), 
+						"type": row[4]})
 				return response
 		finally:
 			cur.close()
@@ -533,7 +554,13 @@ class Data:
 			if result is not None:
 				response = []
 				for row in result:
-					response.append({"id": row[0], "seller": row[1], "buyer": row[2], "price": row[3], "type": row[4]})
+					response.append({
+						"id": row[0], 
+						"seller": row[1], 
+						"buyer": row[2], 
+						"price": from_str_hex_to_int_str(row[3]), 
+						"type": row[4]
+						})
 				return response
 		finally:
 			cur.close()
