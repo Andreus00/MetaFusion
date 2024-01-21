@@ -381,7 +381,7 @@ class Data:
 	def get_all_prompts(self, only_listed=True):
 		cur = self.get_cursor()
 		try:
-			cur.execute('SELECT id, isListed, price, isFreezed, name, category, collectionId, rarity FROM Prompts WHERE isListed=1')
+			cur.execute('SELECT id, isListed, price, isFreezed, name, type, collectionId, rarity FROM Prompts WHERE isListed=1')
 			res = cur.fetchall()
 			ret = []
 			if res is not None:
