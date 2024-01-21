@@ -31,15 +31,15 @@ paths:
                   packets:
                     type: array
                     items:
-                      $ref: '#/components/schemas/Packet'
+                      $ref: '#/components/schemas/TinyPacket'
                   prompts:
                     type: array
                     items:
-                      $ref: '#/components/schemas/Prompt'
+                      $ref: '#/components/schemas/TinyPrompt'
                   cards:
                     type: array
                     items:
-                      $ref: '#/components/schemas/Card'
+                      $ref: '#/components/schemas/TinyCard'
                   transactions:
                       $ref: '#/components/schemas/TransactionHistory'
                   

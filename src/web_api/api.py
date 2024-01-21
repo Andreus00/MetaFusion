@@ -94,7 +94,7 @@ def extract_card_info(card: Image):
 @app.get("/card/{cardid}")
 async def get_card(cardid: str, r: Request):
     card = database.get_image(cardid)
-    info = extract_card_info(card=card)
+    return card
 
     if card is None:
         raise HTTPException(404, detail='card not found')
