@@ -215,6 +215,35 @@ paths:
         '401': { $ref: '#/components/responses/UserNotAuthorized' }
         '500': { $ref: '#/components/responses/InternalServerError' }
   
+
+  /card/{cardid}/image:
+    get:
+      tags: [ "Card"]
+      operationId: Get card's image
+      summary: Get the image associate to the card
+      description: "Get the image associate to the card. The image is a png file"
+      parameters:
+        - name: cardid
+          schema:
+            format: string
+            type: string
+            example: "0x60010001400c2001a001400100026001e0018001c001a001eb48a1b59a91906d"
+          in: path
+          description: "card uuid"
+          required: true
+      responses:
+        '201':
+          description: Success
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+                  
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/UserNotAuthorized' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+
   /packets/:
     get:
       tags: [ "Packet"]

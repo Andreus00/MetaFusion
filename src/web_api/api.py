@@ -1,11 +1,13 @@
-import json
+import os
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from src.db.data import Data, Image
 from hydra.utils import instantiate
 from hydra import initialize, compose
 from omegaconf import OmegaConf
+import re
 
 with initialize(version_base=None, config_path="../../conf", job_name="web_api"):
     cfg = compose(config_name="webapi_config")
@@ -106,6 +108,23 @@ async def get_card_transactions(cardid: str, r: Request):
     if trans is None:
         raise HTTPException(404, detail='trans not found')
     return trans
+
+@app.get("/card/{cardid}/image")
+async def get_card_image(cardid: str, r: Request):
+
+    # first check if the user is not trying to do something malicious
+    # by checking if the cardid is in the right format
+    if len(cardid) != 66:
+        raise HTTPException(404, detail='card not found - length should be 66')
+    if not re.match(r'[a-z0-9]{66}', cardid):
+        raise HTTPException(404, detail='card not found - wrong format')
+
+    base_url: str = "ipfs/image/"
+    card_url = os.path.join(base_url, cardid + ".png")
+    print(card_url)
+    if os.path.exists(card_url):
+        return FileResponse(card_url)
+    raise HTTPException(404, detail='card not found')
 
 
 @app.get("/cards/")

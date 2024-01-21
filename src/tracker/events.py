@@ -117,7 +117,7 @@ class ImageCreated(Event):
         imageCid = int256ToCid(self.IPFSCid)
         # image.initWithParams(id=self.imageId, userIdHex=self.creator, hash=imageCid, data=data)
         image.addIPFSHash(self.imageId, imageCid, data)
-        IPFSClient.download(imageCid, path=f"ipfs/image/{self.imageId}.png")
+        IPFSClient.download(imageCid, path=f"ipfs/image/{from_int_to_hex_str(self.imageId)}.png")
 
 @dataclass
 class DestroyImage(Event):
