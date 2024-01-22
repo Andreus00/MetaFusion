@@ -70,6 +70,7 @@ contract Sellable is ERC721 {
      * List a token.
      */
     function listToken(uint256 tokenId, uint256 cost) public onlyOwner {
+        require(cost > 0, "Cost must be greater than 0");
         // set a cost
         _setTokenCost(tokenId, cost);
         // approve the MetaFusion contract to transfer the token
