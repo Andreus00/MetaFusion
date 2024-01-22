@@ -434,7 +434,7 @@ contract MetaFusionPresident {
      * @param value the amount of ether to send
      */
     function _payAddress(address _to, uint256 value) private {
-        (bool sent, bytes memory data) = _to.call{value: value}("");
+        (bool sent,) = _to.call{value: value}("");
         require(sent, "Failed to send Ether");
     }
 
@@ -503,6 +503,7 @@ contract MetaFusionPresident {
 
     receive() external payable {} // to support receiving ETH by default
     fallback() external payable {}
+    
 
     function terminate() public onlyOwner {
         selfdestruct(payable(owner));

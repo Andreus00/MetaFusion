@@ -131,7 +131,7 @@ class WordExtractor(object):
         rarity = prompt_type[prompt][1]
 
         prompt_type[prompt][0] -= 1
-        if prompt_type[prompt][0] == 0:
+        if prompt_type[prompt][0] <= 0:
             del prompt_type[prompt]
 
         return prompt, rarity

@@ -179,9 +179,6 @@ async function connect(contractName: string) {
             let tx2 = await contract_buyer.buyPacket(packet_id, { value: packet_transf_cost + transaction_fees});
             await tx2.wait();
 
-            // wait for the transfer to be completed
-            await new Promise(r => setTimeout(r, 2500));
-
             packets[seller.address][collection].splice(i, 1);
             packets[buyer.address][collection].push(packet_id);
 
@@ -299,7 +296,7 @@ async function connect(contractName: string) {
             let tx2 = await contract_buyer.buyPrompt(prompt_id, { value: prompt_transf_cost + transaction_fees});
             await tx2.wait();
 
-            await new Promise(r => setTimeout(r, 2500));
+            
             prompts[seller.address][collection].splice(i, 1);
             prompts[buyer.address][collection].push(prompt_id);
 
@@ -385,9 +382,6 @@ async function connect(contractName: string) {
 
         tx = await contract_buyer.buyCard(image_id, { value: image_transf_cost + transaction_fees});
         await tx.wait();
-
-
-        await new Promise(r => setTimeout(r, 5500));
 
         images[seller.address][collection].splice(0, 1);
         images[buyer.address][collection].push(image_id);
