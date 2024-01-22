@@ -7,9 +7,6 @@ def initOracleFilters(contract):
     filters = [
         contract.events.PacketOpened.create_filter(fromBlock="latest"),
         contract.events.CreateImage.create_filter(fromBlock="latest"),
-        contract.events.WillToBuyPacket.create_filter(fromBlock="latest"),
-        contract.events.WillToBuyPrompt.create_filter(fromBlock="latest"),
-        contract.events.WillToBuyImage.create_filter(fromBlock="latest"),
     ]
 
     return filters

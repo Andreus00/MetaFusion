@@ -9,7 +9,7 @@
 
 pragma solidity ^0.8.19;
 
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "./Sellable.sol";
 
 /**
  * CARD ENCODING
@@ -20,7 +20,7 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
  * ]LSB
  */
 
-contract MetaCard is ERC721 {
+contract MetaCard is Sellable {
 
     /////////// CONSTANTS ///////////
 
@@ -28,24 +28,14 @@ contract MetaCard is ERC721 {
      * The owner of the contract.
      */
     address immutable private owner;  // the owner of the contract; alias president
-    
 
-    /////////// MODIFIERS ///////////
-
-    /**
-     * Only owner modifier.
-     */
-    modifier onlyOwner() {
-        require(msg.sender == owner, "You're not the owner!");
-        _;
-    }
 
     /////////// CONSTRUCTOR ///////////
 
     /**
      * Constructor.
      */
-    constructor() ERC721("MetaCard", "MCD") { // The name and symbol of the token
+    constructor() Sellable("MetaCard", "MCD") { // The name and symbol of the token
         owner = msg.sender;    // The owner of the contract is the one who deployed it
     }
 
@@ -55,7 +45,7 @@ contract MetaCard is ERC721 {
      * Burn a card.
      */
     function destroyCard(uint256 imageId) public onlyOwner{
-        _burn(imageId);
+        super.burn(imageId);
     }
 
     /**
@@ -75,16 +65,5 @@ contract MetaCard is ERC721 {
         _safeMint(to, cardPrompts);
         
         return cardPrompts;
-    }
-
-    /**
-     * Approve a card.
-     * 
-     * This function is overriden to allow the oracle to approve cards.
-     * 
-     * An approved card can be bought.
-     */
-	function approve(address to, uint256 tokenId) public override onlyOwner {
-        _approve(to, tokenId, tx.origin);
     }
 }

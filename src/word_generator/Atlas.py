@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, Dict
+from typing import List, Dict, Union
 from random import choice
 import hashlib
 from enum import Enum
@@ -108,7 +108,7 @@ class WordExtractor(object):
         self.addCollection(1, test_collection)
         self.addCollection(2, test_collection)
     
-    def addCollection(self, collectionId: int, collection_prompts: Dict[int, Dict[str, List[int, float]]]):
+    def addCollection(self, collectionId: int, collection_prompts: Dict[int, Dict[str, List[Union[int, float]]]]):
         '''
         Add a collections of prompts.
         '''

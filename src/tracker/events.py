@@ -136,37 +136,6 @@ class DestroyImage(Event):
 
 
 @dataclass
-class WillToBuyEvent(Event):
-    '''
-    When this event is intercepted, the tracker should check if the buyer sent enought money.
-    If so, the tracker should send the money to the seller and the item to the buyer.
-    Otherwise, the tracker should emit a refund.
-    '''
-    buyer: str
-    seller: str
-    value: float
-
-
-@dataclass
-class WillToBuyPacket(WillToBuyEvent):
-    
-    def handle(self, contract, provider, IPFSClient, data: Data):
-        pass
-
-@dataclass
-class WillToBuyPrompt(WillToBuyEvent):
-    
-    def handle(self, contract, provider, IPFSClient, data: Data):
-        return super().handle()
-
-@dataclass
-class WillToBuyImage(WillToBuyEvent):
-    
-    def handle(self, contract, provider, IPFSClient, data: Data):
-        return super().handle()
-
-
-@dataclass
 class TransferEvent(Event):
     buyer: str
     seller: str
