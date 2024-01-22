@@ -1,3 +1,8 @@
+'''
+This file contains the events that the oracle can handle.
+'''
+
+
 from dataclasses import dataclass
 from abc import abstractmethod, ABC
 from typing import List
@@ -18,13 +23,22 @@ word_generator = Atlas.WordExtractor()
 
 @dataclass
 class Event(ABC):
+    '''
+    Basic class for events.
+    '''
     event: str
 
     @abstractmethod
     def handle(self, contract, provider, IPFSClient, model, data):
+        '''
+        Handle the event
+        '''
         pass
 
     def log(self, logger):
+        '''
+        Log the event
+        '''
         attributes = "\n".join([f"{k}: {v}" for k, v in self.__dict__.items()])
         msg = f"""
                 ====================
@@ -34,6 +48,10 @@ class Event(ABC):
 
 @dataclass
 class PacketOpened(Event):
+    '''
+    Handle the opening of a packet.
+    '''
+
     opener: str
     prompts: List[int]
 
@@ -43,8 +61,6 @@ class PacketOpened(Event):
         '''
         for prompt in self.prompts:
             _, packet, type_id, collection = utils.getInfoFromPromptId(prompt)
-
-            print(hex(int(prompt)), collection, type_id, packet)
 
             random_prompt, rarity = word_generator.generate_prompt(collection, type_id, prompt)
 
@@ -60,14 +76,8 @@ class PacketOpened(Event):
             cid = IPFSClient.http_client.add_bytes(json.dumps(data).encode("utf-8"))
 
             cid_int = utils.cidToInt256(cid)
-
-            print("------------------")
-            print("Prompt:", prompt)
-            print("Name:", random_prompt)
-            print("CID:", cid)
-            print("CID_int:", cid_int)
             
-            # call the function
+            # call the contract function to notify the blockchain.
             call_func = contract.functions.promptMinted(**{
                                         "IPFSCid": cid_int,
                                         "promptId": prompt,
@@ -90,6 +100,9 @@ class PacketOpened(Event):
 
 @dataclass
 class CreateImage(Event):
+    '''
+    Handle the creation of an image.
+    '''
     creator: str
     cardId: int
 
@@ -99,11 +112,7 @@ class CreateImage(Event):
         '''
         seed, (style_id, eyes_id, color_id, tool_id, hat_id, character_id) = utils.getInfoFromImageId(self.cardId)
 
-        print(character_id, hat_id, tool_id, color_id, eyes_id, style_id)
-
-
         # read the names from the db
-
         character = data.get_prompt(character_id)
         hat = data.get_prompt(hat_id)
         tool = data.get_prompt(tool_id)
@@ -111,6 +120,7 @@ class CreateImage(Event):
         eyes = data.get_prompt(eyes_id)
         style = data.get_prompt(style_id)
 
+        # generate the prompt
         prompt = Prompt().set_character(character)\
                     .set_hat(hat)\
                     .set_tool(tool)\
@@ -119,7 +129,11 @@ class CreateImage(Event):
                     .set_style(style)\
                     .build()
 
+        # generate the image
         image: Image = model(prompt=prompt).images[0]
+
+
+        # save the image in a buffer
         img_byte_arr = io.BytesIO()
         image.save(img_byte_arr, format='PNG')
         img_byte = img_byte_arr.getvalue()
@@ -163,7 +177,7 @@ class WillToBuyEvent(Event):
 
     def refund(self, contract, provider):
         '''
-        Refund the buyer
+        Refund the buyer if something went wrong
         '''
 
         call_func = contract.functions.refund(**{"buyer": self.buyer,  "value": self.value})\
@@ -236,7 +250,7 @@ class WillToBuyPrompt(WillToBuyEvent):
     
     def handle(self, contract, provider, IPFSClient, model, data: Data):
         '''
-        Pay the seller and send the packet to the buyer
+        Pay the seller and send the prompt to the buyer
         '''
 
         prompt = data.get_prompt(self.id)
@@ -268,8 +282,20 @@ class WillToBuyPrompt(WillToBuyEvent):
             tx_receipt = provider.eth.wait_for_transaction_receipt(send_tx)
             
         else:
-            # refund the buyer
-            self.refund(contract, provider)
+            if not is_listed:
+                # the tracker didn't have time to update the DB. 
+                # This is an edge case in which list and 
+                # buy are very close, but it can happen.
+                # In theory the buyer (who acts as an attacker) could spam
+                # the network with buy requests to make this happen.
+                # We discourage this behaviour by applying a fee
+                # to the buyer every time he buys a prompt.
+                self.refund(contract, provider)
+                raise Exception("Prompt is not listed in DB whie it should be")
+            else:
+                # genuine refund
+                # refund the buyer
+                self.refund(contract, provider)
 
 
 @dataclass
@@ -308,10 +334,25 @@ class WillToBuyImage(WillToBuyEvent):
             tx_receipt = provider.eth.wait_for_transaction_receipt(send_tx)
 
         else:
-            # refund the buyer
-            self.refund(contract, provider)
+            if not is_listed:
+                # the tracker didn't have time to update the DB. 
+                # This is an edge case in which list and 
+                # buy are very close, but it can happen.
+                # In theory the buyer (who acts as an attacker) could spam
+                # the network with buy requests to make this happen.
+                # We discourage this behaviour by applying a fee
+                # to the buyer every time he buys a image.
+                self.refund(contract, provider)
+                raise Exception("Image is not listed in DB whie it should be")
+            else:
+                # genuine refund
+                # refund the buyer
+                self.refund(contract, provider)
 
 
 def get_event_class(event_name):
+    '''
+    Get the event class from the event name.
+    '''
     event_class = globals()[event_name]
     return event_class

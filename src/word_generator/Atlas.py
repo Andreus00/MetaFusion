@@ -5,13 +5,21 @@ import hashlib
 from enum import Enum
 import random
 
+NUM_PROMPTS_PER_CATEGORY = 1000
+
+
 def getRarity(rarity: int):
-    return [rarity, rarity / 1000]
+    '''
+    Get the rarity of a prompt.
+    Considers the number of prompts per category.
+    '''
+    return [rarity, rarity / NUM_PROMPTS_PER_CATEGORY]
 class WordExtractor(object):
 
     def __init__(self) -> None:
-        self.collections = {}
         '''
+        Initialize the word extractor.
+
         tot 6000
         per category 1000
 
@@ -21,6 +29,9 @@ class WordExtractor(object):
         gold:       20  2,0%
         mythic:     5   0,5%
         '''
+        self.collections = {}
+
+        # we added a collection for testing purposes
         test_collection = {
             0: {
                 "dog": getRarity(1),
@@ -93,15 +104,19 @@ class WordExtractor(object):
                 "steampunk": getRarity(400),
             },
         }
+
         self.addCollection(1, test_collection)
         self.addCollection(2, test_collection)
     
-    def addCollection(self, collection: int, prompts: Dict[str, int]):
-        self.collections[collection] = prompts
+    def addCollection(self, collectionId: int, collection_prompts: Dict[int, Dict[str, List[int, float]]]):
+        '''
+        Add a collections of prompts.
+        '''
+        self.collections[collectionId] = collection_prompts
 
     def generate_prompt(self, collection_id: int, type_id: int, prompt_id: int):
         '''
-        Randomly get a prompt.
+        Randomly get a prompt from a collection.
         '''
         random.seed(prompt_id)
 

@@ -2,16 +2,30 @@ import base58
 from typing import List
 
 def cidToInt256(cid):
+    '''
+    Convert a base58 encoded CID to an int256.
+
+    This function removes the first two bytes of the base58 decoded CID, which are "Qm".
+    '''
     return int.from_bytes(base58.b58decode(cid)[2:], "big")
 
 def int256ToCid(int256):
+    '''
+    Convert an int256 to a base58 encoded CID.
+    '''
     return base58.b58encode(b"\x12\x20" + int.to_bytes(int256, 32, "big")).decode("utf-8")
     
 
 def from_int_to_hex_str(integer: int):
+    '''
+    Convert an integer to a hex string.
+    '''
     return str(hex(integer))
 
-def from_str_hex_to_int_str(hex_string: str):
+def from_str_hex_to_int(hex_string: str):
+    '''
+    Convert a hex string to an integer.
+    '''
     return int(hex_string, 16)
 
 

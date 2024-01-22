@@ -1,3 +1,10 @@
+'''
+Main of the oracle.
+
+run from the root directory with:
+python3 -m src.oracle.oracle
+'''
+
 import web3
 import hydra
 import time
@@ -20,12 +27,18 @@ logger = logging.getLogger(__name__)
 
 
 def initModel(model_cfg):
+    '''
+    Initializes the diffusion model from the config file.
+    '''
     model = hydra.utils.call(model_cfg.from_pretrained, torch_dtype=torch.float16)
     model.to(model_cfg.device)
     logger.info("Model instantiated.")
     return model
 
 def instantiateProvider(provider_cfg):
+    '''
+    Instantiates the web3 provider from the config file.
+    '''
     provider: web3.Web3 = hydra.utils.instantiate(provider_cfg)
     provider.eth.default_account = provider.eth.accounts[0]
 
@@ -39,6 +52,9 @@ def instantiateProvider(provider_cfg):
     return provider
 
 def instantiateIPFS(ipfs_cfg):
+    '''
+    Instantiates the IPFS client from the config file.
+    '''
     client = ipfs_api
 
     try:
@@ -56,16 +72,18 @@ def instantiateIPFS(ipfs_cfg):
 
 
 def getABI():
-    # open artifacts/contracts/MetafusionPresident.sol/MetafusionPresident.json
-    
-
-    logger.info(f"Current working directory: {os.getcwd()}")
+    '''
+    Returns the ABI of the contract.
+    '''
 
     with open("./artifacts/contracts/MetafusionPresident.sol/MetaFusionPresident.json") as f:
         contract_json = json.load(f)
     return contract_json["abi"]
 
 def initContract(contract_cfg, provider):
+    '''
+    Initializes the contract.
+    '''
     ABI = getABI()
     address = provider.to_checksum_address(contract_cfg.contract_address)
     contract = provider.eth.contract(
@@ -75,6 +93,9 @@ def initContract(contract_cfg, provider):
     return contract
 
 def loop(provider, contract, filters, IPFSClient, model, data, cfg):
+    '''
+    Main loop of the oracle.
+    '''
     while True:
         for filter in filters:
             for idx, event in enumerate(filter.get_new_entries()):
@@ -87,6 +108,9 @@ def loop(provider, contract, filters, IPFSClient, model, data, cfg):
         
 
 def initData():
+    '''
+    Init the database connection.
+    '''
     return Data()
 
 @hydra.main(config_path="../../conf", config_name="oracle_config")
@@ -102,10 +126,13 @@ def main(cfg):
     # Create web3 connection
     provider = instantiateProvider(cfg.provider)
 
+    # Instantiate the contract
     contract = initContract(cfg.contract, provider)
 
+    # Initialize the filters
     filters = initOracleFilters(contract)
 
+    # Start the loop
     loop(provider, contract, filters, IPFSClient, model, data, cfg)
 
 if __name__ == "__main__":

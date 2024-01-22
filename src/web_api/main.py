@@ -4,6 +4,12 @@ from omegaconf import OmegaConf
 from .api import set_database
 from .api import app, database
 
+'''
+Main of the web api server
+
+run from the root directory with:
+python3 -m src.web_api.main
+'''
 
 if __name__ == '__main__':
     cfg = None

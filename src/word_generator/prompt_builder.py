@@ -1,6 +1,9 @@
 import torch
 
 class Prompt:
+    '''
+    Utility class used to assemble a prompt.
+    '''
 
     def __init__(self, starter="a 3D", trailer="upper bust, ultra realistic, 4k, frontal view"):
         self.starter =  starter

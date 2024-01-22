@@ -15,9 +15,9 @@ class Packet:
 		self.userIdHex: str = ''
 
 	def initWithDb(self, res):
-		self.id = from_str_hex_to_int_str(res[0])
+		self.id = from_str_hex_to_int(res[0])
 		self.isListed = res[1]
-		self.price = from_str_hex_to_int_str(res[2])
+		self.price = from_str_hex_to_int(res[2])
 		self.userIdHex = res[3].lower()
 		return self
 	def initWithParams(self, id, userIdHex: str, isListed: bool = False, price: int = 0, data=None):
@@ -60,7 +60,7 @@ class Prompt:
 		self.id = res[0]
 		self.hash = res[1]
 		self.isListed = res[2]
-		self.price = from_str_hex_to_int_str(res[3])
+		self.price = from_str_hex_to_int(res[3])
 		self.isFreezed = res[4]
 		self.userIdHex = res[5].lower()
 		self.name = res[6]
@@ -121,7 +121,7 @@ class Image:
 		self.id = res[0]
 		self.hash = res[1]
 		self.isListed = res[2]
-		self.price = from_str_hex_to_int_str(res[3])
+		self.price = from_str_hex_to_int(res[3])
 		self.userIdHex = res[4].lower()
 		return self
 	
@@ -142,7 +142,7 @@ class Image:
 				
 	def unfreezePrompts(self, data):
 		if isinstance(self.id, str):
-			self.id = from_str_hex_to_int_str(self.id)
+			self.id = from_str_hex_to_int(self.id)
 		_, prompts = getInfoFromImageId(self.id)
 		for prompt in prompts:
 			if prompt != 0:
@@ -215,7 +215,7 @@ class Data:
 				result.append({
 					"id": row[0], 
 					"isListed": row[1], 
-					"price": from_str_hex_to_int_str(row[2]), 
+					"price": from_str_hex_to_int(row[2]), 
 					"collectionId": row[3],
 					"nft_type": 0})
 			return result
@@ -232,7 +232,7 @@ class Data:
 				result.append({
 					"id": row[0], 
 					"isListed": row[1], 
-					"price": from_str_hex_to_int_str(row[2]), 
+					"price": from_str_hex_to_int(row[2]), 
 					"isFreezed": row[3], 
 					"name": row[4], 
 					"category": row[5], 
@@ -253,7 +253,7 @@ class Data:
 				result.append({
 					"id": row[0], 
 					"isListed": row[1], 
-					"price": from_str_hex_to_int_str(row[2]), 
+					"price": from_str_hex_to_int(row[2]), 
 					"collectionId": row[3],
 					"nft_type": 2})
 			return result
@@ -273,7 +273,7 @@ class Data:
 					return {
 						"id": res[0],
 						"isListed": res[1],
-						"price": from_str_hex_to_int_str(res[2]),
+						"price": from_str_hex_to_int(res[2]),
 						"owner": res[3],
 						"collectionId": res[4],
 						"nft_type": 0
@@ -297,7 +297,7 @@ class Data:
 						"id": res[0],
 						"ipfsCid": res[1],
 						"isListed": res[2],
-						"price": from_str_hex_to_int_str(res[3]),
+						"price": from_str_hex_to_int(res[3]),
 						"isFreezed": res[4],
 						"owner": res[5],
 						"name": res[6],
@@ -319,14 +319,14 @@ class Data:
 			res = cur.fetchone()
 			if res is not None:
 				# get prompts that are in this image
-				_, prompts = getInfoFromImageId(from_str_hex_to_int_str(image_id))
+				_, prompts = getInfoFromImageId(from_str_hex_to_int(image_id))
 
 				if as_json:
 					return {
 						"id": res[0],
 						"ipfsCid": res[1],
 						"isListed": res[2],
-						"price": from_str_hex_to_int_str(res[3]),
+						"price": from_str_hex_to_int(res[3]),
 						"owner": res[4],
 						"collectionId": res[5],
 						"prompts": sorted([
@@ -387,7 +387,7 @@ class Data:
 					response.append({
 						"id": row[0], 
 						"isListed": row[1], 
-						"price": from_str_hex_to_int_str(row[2]), 
+						"price": from_str_hex_to_int(row[2]), 
 						"collectionId": row[3],
 						"nft_type": 0
 					})
@@ -406,7 +406,7 @@ class Data:
 					ret.append({
 						"id": row[0],
 						"isListed": row[1],
-						"price": from_str_hex_to_int_str(row[2]),
+						"price": from_str_hex_to_int(row[2]),
 						"isFreezed": row[3],
 						"name": row[4],
 						"category": row[5],
@@ -430,7 +430,7 @@ class Data:
 					ret.append({
 						"id": row[0],
 						"isListed": row[1],
-						"price": from_str_hex_to_int_str(row[2]),
+						"price": from_str_hex_to_int(row[2]),
 						"collectionId": row[3],
 						"nft_type": 2
 					})
@@ -566,7 +566,7 @@ class Data:
 						"id": row[0], 
 					  	"seller": row[1], 
 						"buyer": row[2], 
-						"price": from_str_hex_to_int_str(row[3]), 
+						"price": from_str_hex_to_int(row[3]), 
 						"type": row[4]})
 				return response
 		finally:
@@ -584,7 +584,7 @@ class Data:
 						"id": row[0], 
 						"seller": row[1], 
 						"buyer": row[2], 
-						"price": from_str_hex_to_int_str(row[3]), 
+						"price": from_str_hex_to_int(row[3]), 
 						"type": row[4]
 						})
 				return response
