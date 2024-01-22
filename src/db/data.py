@@ -18,13 +18,13 @@ class Packet:
 		self.id = from_str_hex_to_int_str(res[0])
 		self.isListed = res[1]
 		self.price = from_str_hex_to_int_str(res[2])
-		self.userIdHex = res[3]
+		self.userIdHex = res[3].lower()
 		return self
 	def initWithParams(self, id, userIdHex: str, isListed: bool = False, price: int = 0, data=None):
 		self.id: int = id
 		self.isListed: bool = isListed
 		self.price: int = price 
-		self.userIdHex = userIdHex 
+		self.userIdHex = userIdHex.lower()
 		if data is not None:
 			self.writeToDb(data) 
 	
@@ -62,7 +62,7 @@ class Prompt:
 		self.isListed = res[2]
 		self.price = from_str_hex_to_int_str(res[3])
 		self.isFreezed = res[4]
-		self.userIdHex = res[5]
+		self.userIdHex = res[5].lower()
 		self.name = res[6]
 		self.rarity = res[7]
 		return self
@@ -72,7 +72,7 @@ class Prompt:
 		self.isListed: bool = isListed
 		self.price: int = price
 		self.isFreezed: bool = isFreezed	
-		self.userIdHex: str = userIdHex
+		self.userIdHex: str = userIdHex.lower()
 		self.name: str = name
 		self.rarity: int = rarity
 		if data is not None:
@@ -122,7 +122,7 @@ class Image:
 		self.hash = res[1]
 		self.isListed = res[2]
 		self.price = from_str_hex_to_int_str(res[3])
-		self.userIdHex = res[4]
+		self.userIdHex = res[4].lower()
 		return self
 	
 	def initWithParams(self, id: int, userIdHex: str, hash: str = None, isListed: bool = False, price: int = 0, data=None):
@@ -130,7 +130,7 @@ class Image:
 		self.hash: str = hash   # IPFS hash
 		self.isListed: bool = isListed
 		self.price: int = price
-		self.userIdHex: str = userIdHex
+		self.userIdHex: str = userIdHex.lower()
 		if data is not None:
 			self.writeToDb(data)
 
@@ -330,7 +330,7 @@ class Data:
 						"owner": res[4],
 						"collectionId": res[5],
 						"prompts": sorted([
-							self.get_prompt(from_int_to_hex_str(prompt)) for prompt in prompts if prompt != 0
+							self.get_prompt(from_int_to_hex_str(prompt), as_json=True) for prompt in prompts if prompt != 0
 						], key=lambda x: x["category"]),
 						"nft_type": 2
 					}
@@ -591,32 +591,32 @@ class Data:
 		finally:
 			cur.close()
 
-	def transfer_packet(self, packet_id: int, from_user_id: int, to_user_id: int):
+	def transfer_packet(self, packet_id: int, from_user_id: str, to_user_id: str):
 		cur = self.get_cursor()
 		try:
-			cur.execute('UPDATE Packets SET userHex = ?, isListed = 0 WHERE id = ?', (to_user_id, from_int_to_hex_str(packet_id)))
+			cur.execute('UPDATE Packets SET userHex = ?, isListed = 0 WHERE id = ?', (to_user_id.lower(), from_int_to_hex_str(packet_id)))
 			self.con.commit()
-			self.addTransferEvent(packet_id, from_user_id, to_user_id, 0)
+			self.addTransferEvent(packet_id, from_user_id.lower(), to_user_id.lower(), 0)
 			return True
 		finally:
 			cur.close()
 
-	def transfer_prompt(self, prompt_id: int, from_user_id: int, to_user_id: int):
+	def transfer_prompt(self, prompt_id: int, from_user_id: str, to_user_id: str):
 		cur = self.get_cursor()
 		try:
-			cur.execute('UPDATE Prompts SET userHex = ?, isListed = 0 WHERE id = ?', (to_user_id, from_int_to_hex_str(prompt_id)))
+			cur.execute('UPDATE Prompts SET userHex = ?, isListed = 0 WHERE id = ?', (to_user_id.lower(), from_int_to_hex_str(prompt_id)))
 			self.con.commit()
-			self.addTransferEvent(prompt_id, from_user_id, to_user_id, 1)
+			self.addTransferEvent(prompt_id, from_user_id.lower(), to_user_id.lower(), 1)
 			return True
 		finally:
 			cur.close()
 
-	def transfer_image(self, image_id: int, from_user_id: int, to_user_id: int):
+	def transfer_image(self, image_id: int, from_user_id: str, to_user_id: str):
 		cur = self.get_cursor()
 		try:
-			cur.execute('UPDATE Images SET userHex = ?, isListed = 0 WHERE id = ?', (to_user_id, from_int_to_hex_str(image_id)))
+			cur.execute('UPDATE Images SET userHex = ?, isListed = 0 WHERE id = ?', (to_user_id.lower(), from_int_to_hex_str(image_id)))
 			self.con.commit()
-			self.addTransferEvent(image_id, from_user_id, to_user_id, 2)
+			self.addTransferEvent(image_id, from_user_id.lower(), to_user_id.lower(), 2)
 			return True
 		finally:
 			cur.close()

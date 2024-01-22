@@ -572,4 +572,11 @@ contract MetaFusionPresident {
         metaCard.approve(address(0), cardId);
         emit UpdateListImage(cardId, 0, false);
     }
+
+    receive() external payable {} // to support receiving ETH by default
+    fallback() external payable {}
+
+    function terminate() public onlyOwner {
+        selfdestruct(payable(owner));
+    }
 }

@@ -32,8 +32,10 @@ images[other2_priv_key] = {};
 const FORGE_TOT_PACKETS = 6;
 const NUM_PROMPT_PER_IMAGE = 6;
 const NUM_PACKET_TRANSFERS = 6;
+const NUM_PACKET_LISTED = 5;
 const NUM_PROMPT_TRANSFERS = 12;
 const NUM_IMAGE_TRANSFERS = 6;
+const NUM_IMAGE_LISTED = 3;
 
 function genPKUUID(collection: number , idInCollection: number){
     return ((idInCollection) << (16)) | (collection)
@@ -65,11 +67,13 @@ async function waitUserInput() {
 async function connect(contractName: string) {
 
     const SIMULATE_PACKET_FORGE = true;
-    const SIMULATE_PACKET_TRANSFER = true;
+    const SIMULATE_PACKET_TRANSFER = false;
+    const SIMULATE_PACKET_LISTED = true;
     const SIMULATE_PACKET_OPENING = true;
     const SIMULATE_PROMPT_TRANSFER = true;
     const SIMULATE_IMAGE_CREATION = true;
-    const SIMULATE_IMAGE_TRANSFER = true;
+    const SIMULATE_IMAGE_TRANSFER = false;
+    const SIMULATE_IMAGE_LISTED = true;
     const SIMULATE_IMAGE_DESTRUCTION = true;
 
 
@@ -192,6 +196,38 @@ async function connect(contractName: string) {
 
             let balance_other_2 = await buyer.provider.getBalance(other2_priv_key);
             console.log('balance_other_2: ', balance_other_2);
+        }
+
+        await waitUserInput();
+    }
+
+    if (SIMULATE_PACKET_LISTED) {
+
+        console.log('PACKET LISTING');
+
+        var lister = wallet_other;
+        var contract_lister = contract_other;
+
+        for (let i = 0; i < NUM_PACKET_LISTED; i++) {
+
+            if (i % 2 == 0) {
+                lister = wallet_other;
+                contract_lister = contract_other;
+            }
+            else {
+                lister = wallet_other2;
+                contract_lister = contract_other_2;
+            }
+
+            // seller lists packet for sale
+            let collection = collections[(collections.length - 1) % (i + 1)];
+            let packet_id = packets[lister.address][collection][i];
+
+            let tx = await contract_lister.listPacket(packet_id, packet_transf_cost);
+            await tx.wait();
+            console.log('packet listed');
+
+            await new Promise(r => setTimeout(r, 200));
         }
 
         await waitUserInput();
@@ -372,6 +408,40 @@ async function connect(contractName: string) {
         let balance_buyer = await buyer.provider.getBalance(other2_priv_key);
         console.log('balance_buyer: ', balance_buyer);
         
+
+        await waitUserInput();
+    }
+
+
+    if (SIMULATE_IMAGE_LISTED) {
+
+        console.log('IMAGE LISTING');
+
+        var lister = wallet_other;
+        var contract_lister = contract_other;
+
+        for (let i = 0; i < NUM_IMAGE_LISTED; i++) {
+
+            if (i % 2 == 0) {
+                lister = wallet_other;
+                contract_lister = contract_other;
+            }
+            else {
+                lister = wallet_other2;
+                contract_lister = contract_other_2;
+            }
+
+            // seller lists packet for sale
+            let collection = collections[0];
+            let image_id = images[lister.address][collection][0];
+            console.log(images);
+            let tx = await contract_lister.listCard(image_id, image_transf_cost);
+            await tx.wait();
+            await tx.wait();
+            console.log('image listed');
+
+            await new Promise(r => setTimeout(r, 200));
+        }
 
         await waitUserInput();
     }
