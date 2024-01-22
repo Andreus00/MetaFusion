@@ -19,6 +19,8 @@ from ..word_generator.prompt_builder import Prompt
 
 PACKET_SIZE = 8
 word_generator = Atlas.WordExtractor()
+public_key = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"   # testnet account
+private_key = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"  # testnet account
 
 
 @dataclass
@@ -84,11 +86,11 @@ class PacketOpened(Event):
                                         "to": self.opener,
                                         })\
                                     .build_transaction({
-                                        "from": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-                                        "nonce": provider.eth.get_transaction_count("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"),
+                                        "from": public_key,
+                                        "nonce": provider.eth.get_transaction_count(public_key),
                                     })
             # sign the transaction
-            signed_tx = provider.eth.account.sign_transaction(call_func, private_key="0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80")
+            signed_tx = provider.eth.account.sign_transaction(call_func, private_key=private_key)
 
             # send the transaction
             send_tx = provider.eth.send_raw_transaction(signed_tx.rawTransaction)
@@ -153,11 +155,11 @@ class CreateImage(Event):
                                         "to": self.creator, 
                                         })\
                                     .build_transaction({
-                                        "from": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-                                        "nonce": provider.eth.get_transaction_count("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"),
+                                        "from": public_key,
+                                        "nonce": provider.eth.get_transaction_count(public_key),
                                     })
         # sign the transaction
-        signed_tx = provider.eth.account.sign_transaction(call_func, private_key="0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80")
+        signed_tx = provider.eth.account.sign_transaction(call_func, private_key=private_key)
 
         # send the transaction
         send_tx = provider.eth.send_raw_transaction(signed_tx.rawTransaction)
@@ -182,12 +184,12 @@ class WillToBuyEvent(Event):
 
         call_func = contract.functions.refund(**{"buyer": self.buyer,  "value": self.value})\
                             .build_transaction({
-                                "from": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-                                "nonce": provider.eth.get_transaction_count("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"),
+                                "from": public_key,
+                                "nonce": provider.eth.get_transaction_count(public_key),
                             })
             
         # sign the transaction
-        signed_tx = provider.eth.account.sign_transaction(call_func, private_key="0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80")
+        signed_tx = provider.eth.account.sign_transaction(call_func, private_key=private_key)
 
         # send the transaction
         send_tx = provider.eth.send_raw_transaction(signed_tx.rawTransaction)
@@ -216,12 +218,12 @@ class WillToBuyPacket(WillToBuyEvent):
             # call the function
             call_func = contract.functions.transferPacket(**{"buyer": self.buyer, "seller": self.seller, "packetId": self.id, "val": price})\
                             .build_transaction({
-                                "from": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-                                "nonce": provider.eth.get_transaction_count("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"),
+                                "from": public_key,
+                                "nonce": provider.eth.get_transaction_count(public_key),
                             })
             
             # sign the transaction
-            signed_tx = provider.eth.account.sign_transaction(call_func, private_key="0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80")
+            signed_tx = provider.eth.account.sign_transaction(call_func, private_key=private_key)
 
             # send the transaction
             send_tx = provider.eth.send_raw_transaction(signed_tx.rawTransaction)
@@ -267,13 +269,13 @@ class WillToBuyPrompt(WillToBuyEvent):
                                                              "promptId": self.id, 
                                                              "val": price})\
                             .build_transaction({
-                                "from": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-                                "nonce": provider.eth.get_transaction_count("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"),
+                                "from": public_key,
+                                "nonce": provider.eth.get_transaction_count(public_key),
                             })
             
             # sign the transaction
             signed_tx = provider.eth.account.sign_transaction(call_func, 
-                                                              private_key="0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80")
+                                                              private_key=private_key)
             
             # send the transaction
             send_tx = provider.eth.send_raw_transaction(signed_tx.rawTransaction)
@@ -319,13 +321,13 @@ class WillToBuyImage(WillToBuyEvent):
                                                              "imageId": self.id, 
                                                              "val": price})\
                             .build_transaction({
-                                "from": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-                                "nonce": provider.eth.get_transaction_count("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"),
+                                "from": public_key,
+                                "nonce": provider.eth.get_transaction_count(public_key),
                             })
             
             # sign the transaction
             signed_tx = provider.eth.account.sign_transaction(call_func, 
-                                                              private_key="0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80")
+                                                              private_key=private_key)
             
             # send the transaction
             send_tx = provider.eth.send_raw_transaction(signed_tx.rawTransaction)

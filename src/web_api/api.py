@@ -141,9 +141,9 @@ async def get_card_image(cardid: str, r: Request):
     '''
     # first check if the user is not trying to do something malicious
     # by checking if the cardid is in the right format
-    if len(cardid) != 66:
+    if len(cardid) > 66:
         raise HTTPException(404, detail='card not found - length should be 66')
-    if not re.match(r'[a-z0-9]{66}', cardid):
+    if not re.match(r'[a-z0-9]', cardid):
         raise HTTPException(404, detail='card not found - wrong format')
 
     base_url: str = "ipfs/image/"
