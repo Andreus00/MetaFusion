@@ -4,16 +4,7 @@
  * This contract implements the Prompt for the MetaFusion system.
  * This is based on the ERC721 standard, but with some modifications.
  * 
- * A Prompt can only be minted by the oracle.
- * 
- * The owner of the contract is the only one who can terminate the contract.
- * 
- * The owner of some Prompts can decide to merge them and create an Image.
- * The image is created by the oracle, so the merge function first freezes the prompts
- * and then calls the oracle to mint the image.
- * 
- * The Prompt has a "collection" which is the collection to which the prompt
- * belongs. This is stored in a mapping indexed by the prompt id.
+ * Functions can only be called by the owner of the contract. In metafusion the owner is the MetaFusionPresident.
  */
 
 pragma solidity ^0.8.19;
@@ -28,22 +19,38 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
  *  */
 contract MetaPrompt is ERC721 {
 
-    address private owner;  // the owner of the contract
 
-    uint32 public immutable NUM_PROMPT_TYPES;  // The number of different prompt types
+    /////////// CONSTANTS ///////////
+    /**
+     * The owner of the contract.
+     */
+    address immutable private owner;
 
+    /**
+     * The number of different prompt types.
+     */
+    uint32 public immutable NUM_PROMPT_TYPES;
+
+    /////////// MODIFIERS ///////////
+
+    /**
+     * Only owner modifier.
+     */
     modifier onlyOwner() {
         require(msg.sender == owner, "You're not the owner!");
         _;
     }
 
+    /**
+     * Constructor.
+     */
     constructor(uint32 _NUM_PROMPT_TYPES) ERC721("MetaPrompt", "PRM") { // The name and symbol of the token
         owner = msg.sender;    // The owner of the contract is the one who deployed it
         NUM_PROMPT_TYPES = _NUM_PROMPT_TYPES;
     }
 
     /**
-     * 
+     * Mint a new prompt.
      * @param to The address of the receiver
      * @param id The hash of the prompt (keccak256(prompt + "series number"))
      */
@@ -52,45 +59,65 @@ contract MetaPrompt is ERC721 {
         _safeMint(to, uint256(id));
     }
 
+    /**
+     * Get the collection id of a prompt.
+     */
     function _getCollectionId(uint32 promptId) private pure returns (uint16){
         return uint16(promptId & 0x1fff);
     }
 
+    /**
+     * Get the prompt type of a prompt.
+     */
     function _getPromptType(uint32 promptId) private pure returns (uint8){
         return uint8((promptId >> 13) & 0x7);
     }
 
+    /**
+     * Burn a prompts to generate an image.
+     * 
+     * This function is called by users through the MetaFusionPresident contract.
+     * 
+     * The type of prompts in the array are:
+     * character    0
+     * hat          1
+     * handoff      2
+     * color        3
+     * eyes         4
+     * style        5
+     * 
+     * The user can send 0 for the prompts that are not used.
+     * The character prompt is mandatory.
+     */
     function burnForImageGeneration(address promptOwner, uint32[] memory _prompts) public onlyOwner {
-        /**
-         * This function first checks if all the requirements are met, then freezes
-         * the prompts and finally calls the oracle to mint the image.
-         */
         // first check if the ether sent is enough
-        // then check that the sender owns all the prompts
         require(_prompts[0] != 0, "Character prompt is missing!");
-        uint8 invalidPrompts = 0;
+        // then check that the sender owns all the prompts
         for (uint8 i = 0; i < NUM_PROMPT_TYPES; i++) {
             // if the prompt is 0, then it is not used
-            uint16 collectionId = _getCollectionId(_prompts[0]);
             if (_prompts[i] != 0) {
+                uint16 collectionId = _getCollectionId(_prompts[0]);
+                // check that the sender owns the prompt, that it is of the correct type and that it belongs to the same collection
                 require(promptOwner == ownerOf(_prompts[i]), "Only the owner of the prompts can create an image!");
                 require(_getCollectionId(_prompts[i]) == collectionId, "The prompts must belong to the same collection!");
                 require(_getPromptType(_prompts[i]) == i, "The prompts must be of the correct type!");
             }
-            else {
-                invalidPrompts++;
-            }
         }
-        if (invalidPrompts == NUM_PROMPT_TYPES) {
-            revert("No prompts used!");
-        }
+        // burn the prompts
         for (uint8 i = 0; i < NUM_PROMPT_TYPES; i++) {
             if (_prompts[i] != 0){
                 _burn(_prompts[i]);
             }
-    	}	
+    	}
     }
 
+    /**
+     * Approve a prompt.
+     * 
+     * This function is overriden to allow the oracle to approve prompts.
+     * 
+     * An approved prompt can be bought.
+     */
 	function approve(address to, uint256 tokenId) public override onlyOwner {
         _approve(to, tokenId, tx.origin);
     }

@@ -4,17 +4,7 @@
  * This contract implements the packets for the MetaFusion system.
  * This is based on the ERC721 standard, but with some modifications.
  * 
- * A packet can only be minted by the owner of the contract.
- * The owner of the contract is the only one who can terminate the contract.
- * The owner of a packet can decide to open it by burning it and getting 
- * some Prompts in return.
- * 
- * The unpack function burns the packet and calls the oracle to mint the Prompts.
- * 
- * The packet has a "collection" which is the collection to which the packet
- * belongs. This is stored in a mapping indexed by the packet id.
- * 
- * The packet can be transferred to another address.
+ * Functions can only be called by the owner of the contract. In metafusion the owner is the MetaFusionPresident.
  */
 
 pragma solidity ^0.8.19;
@@ -33,37 +23,66 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
 contract MetaPacket is ERC721 {
 
+	/////////////// CONSTANTS ///////////////
+
+	/**
+	 * The maximum number of packets that can be minted for each collection.
+	 */
+	uint16 constant MAX_PACKETS_PER_COLLECTION = 750;  // The maximum number of packets that can be minted for each collection.
+
+	/**
+	 * The owner of the contract.
+	 */
+	address immutable private owner;
+
 	/////////////// VARIABLES ///////////////
 
-	address private owner;  // the owner of the contract
 
-	mapping (uint16 => uint16) public alreadyMinted;  // Mapping from collection to the number of packets already minted for that collection. 0 if the collection does not exist.
-
-	uint16 constant MAX_PACKETS_PER_COLLECTION = 750;  // The maximum number of packets that can be minted for each collection.
+	/**
+	 * Mapping from collection to the number of packets already minted for that collection. 0 if the collection does not exist.
+	 * 
+	 * Collections existance is handled by this packet.
+	 * If a collection exists, users can mint packets for that collection.
+	 */
+	mapping (uint16 => uint16) public alreadyMinted;
 
 	/////////////// MODIFIERS ///////////////
 
-
+	/**
+	 * Modifier to check if a collection exists.
+	 */
     modifier collectionExists(uint16 _collection) {
         require(checkCollectionExistence(_collection), "The collection does not exist!");
         _;
     }
     
+	/**
+	 * Modifier to check if a collection does not exist.
+	 */
 	modifier collectionNotExists(uint16 _collection) {
         require(!checkCollectionExistence(_collection), "The collection exists!");
         _;
     }
 
+	/**
+	 * Modifier to check if a collection is full.
+	 */
     modifier collectionIsNotFull(uint16 _collection) {
         require(_checkIfCollectionIsFull(_collection), "The collection is full!");
         _;
     }
 
+	/**
+	 * Modifier to check if the sender is the owner of the contract.
+	 */
     modifier onlyOwner() {
         require(msg.sender == owner, "Only the owner can perform this action!");
         _;
     }
 	
+	/**
+	 * Modifier to check if the sender is the owner of the packet.
+	 */
 	modifier onlyPacketOwner(uint32 id, address opener) {
 		require(opener == ownerOf(uint256(id)), "Only the owner of the packet can burn it!");
 		_;
@@ -72,6 +91,9 @@ contract MetaPacket is ERC721 {
 
 	/////////////// CONSTRUCTOR ///////////////
 
+	/**
+	 * Constructor.
+	 */
 	constructor() ERC721("MetaPacket", "PKT") { // The name and symbol of the token
 		owner = msg.sender;    // The owner of the contract is the one who deployed it
 	}
@@ -79,17 +101,33 @@ contract MetaPacket is ERC721 {
 
 	/////////////// FUNCTIONS ///////////////
 	
-
+	/**
+	 * Check if a collection exists.
+	 */
 	function checkCollectionExistence(uint16 _collection) public view returns (bool) {
 		return alreadyMinted[_collection] > 0;
 	}
+
+	/**
+	 * Check if a collection is full.
+	 */
 	function _checkIfCollectionIsFull(uint16 _collection) private view returns (bool) {
 		return MAX_PACKETS_PER_COLLECTION > alreadyMinted[_collection];
 	}
+
+	/**
+	 * Generate the UUID of a packet.
+	 */
 	function _genPKUUID(uint16 _collection, uint16 idInCollection) private pure returns (uint32) {
 		return (uint32(idInCollection) << 16) | uint32(_collection);
 	}
 
+	/**
+	 * Mint a packet.
+	 * 
+	 * Minting consists of generating new UUIDs for packets and storing them in 32 bits each.
+	 * We then mint the packet with _safeMint (ERC721).
+	 */
 	function mint(address buyer, uint16 _collection) public collectionExists(_collection) collectionIsNotFull(_collection) onlyOwner returns(uint32){
 		// calculate the kacchak of alreadyMinted[_collection] + _collection
 		uint16 id = alreadyMinted[_collection];
@@ -102,16 +140,34 @@ contract MetaPacket is ERC721 {
 		return packetUUid32;
 	}
 
+	/**
+	 * Forge a collection.
+	 * 
+	 * This function is called by the MetaFusionPresident when a collection is created.
+	 * It sets the number of packets already minted for that collection to 1.
+	 */
 	function forgeCollection(uint16 _collection) public collectionNotExists(_collection) onlyOwner {
 		alreadyMinted[_collection] = 1;
 	}
 
-
+	/**
+	 * Opening a packet means burning the packet and generating new prompts.
+	 * 
+	 * This function is called by the MetaFusionPresident when a packet is opened.
+	 * 
+	 * Prompts are not generated here, but in the MetaFusionPresident.
+	 */
 	function openPacket(uint32 id) public onlyOwner onlyPacketOwner(id, tx.origin) {
 		_burn(uint256(id));
 	}
 
-	
+    /**
+     * Approve a packet.
+     * 
+     * This function is overriden to allow the oracle to approve packets.
+     * 
+     * An approved packet can be bought.
+     */
 	function approve(address to, uint256 tokenId) public override onlyOwner {
         _approve(to, tokenId, tx.origin);
     }
