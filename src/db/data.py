@@ -627,6 +627,26 @@ class Data:
 		user_images = self.get_images_id_of(user_id, tiny=True)
 		user_transactions = self.get_user_transfer_events(user_id)
 		return user_packets, user_prompts, user_images, user_transactions
+	
+	def get_username(self, user_id: str):
+		cur = self.get_cursor()
+		try:
+			cur.execute('SELECT username FROM User WHERE userId=?', (user_id.lower(),))
+			result = cur.fetchone()
+			if result is not None:
+				return result[0]
+			return None
+		finally:
+			cur.close()
+
+	def set_username(self, user_id: str, username: str):
+		cur = self.get_cursor()
+		try:
+			cur.execute('INSERT OR REPLACE INTO User(userId, username) values (?, ?)', (user_id.lower(), username))
+			self.con.commit()
+			return True
+		finally:
+			cur.close()
 		
 	def fromJson(self, data):
 		obj = json.loads(data)

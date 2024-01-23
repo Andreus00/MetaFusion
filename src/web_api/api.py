@@ -163,6 +163,23 @@ async def get_cards(r: Request):
     return cards
 
 
+@app.get("/user/{userId}/name")
+async def get_username(userId: str, r: Request):
+    '''
+    Get the name of a user.
+    '''
+    name = database.get_username(userId)
+    return {"userName": name}
+
+@app.post("/user/{userId}/name")
+async def set_username(userId: str, name: str, r: Request):
+    '''
+    Set the name of a user.
+    '''
+    database.set_username(userId, name)
+    return {"userName": name}
+
+
 
 
 
