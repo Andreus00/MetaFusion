@@ -9,6 +9,7 @@ from typing import List
 import os
 import json
 import io
+from torch import Generator
 from PIL import Image
 import time
 
@@ -130,11 +131,13 @@ class CreateImage(Event):
                     .set_eyes(eyes)\
                     .set_style(style)\
                     .build()
+        
+        # instantiate the generator
+        generator = Generator().manual_seed(seed)
 
         # generate the image
-        image: Image = model(prompt=prompt).images[0]
-
-
+        image: Image = model(prompt=prompt, generator=generator).images[0]
+        
         # save the image in a buffer
         img_byte_arr = io.BytesIO()
         image.save(img_byte_arr, format='PNG')
