@@ -9,7 +9,7 @@
 
 pragma solidity ^0.8.19;
 
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "./Sellable.sol";
 
 /**
  * ID: 0-15 collection
@@ -21,7 +21,7 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
  * @notice 
  */
 
-contract MetaPacket is ERC721 {
+contract MetaPacket is Sellable {
 
 	/////////////// CONSTANTS ///////////////
 
@@ -30,13 +30,12 @@ contract MetaPacket is ERC721 {
 	 */
 	uint16 constant MAX_PACKETS_PER_COLLECTION = 750;  // The maximum number of packets that can be minted for each collection.
 
-	/**
-	 * The owner of the contract.
-	 */
-	address immutable private owner;
+	// /**
+	//  * The owner of the contract.
+	//  */
+	// address immutable private owner;
 
 	/////////////// VARIABLES ///////////////
-
 
 	/**
 	 * Mapping from collection to the number of packets already minted for that collection. 0 if the collection does not exist.
@@ -73,14 +72,6 @@ contract MetaPacket is ERC721 {
     }
 
 	/**
-	 * Modifier to check if the sender is the owner of the contract.
-	 */
-    modifier onlyOwner() {
-        require(msg.sender == owner, "Only the owner can perform this action!");
-        _;
-    }
-	
-	/**
 	 * Modifier to check if the sender is the owner of the packet.
 	 */
 	modifier onlyPacketOwner(uint32 id, address opener) {
@@ -94,8 +85,8 @@ contract MetaPacket is ERC721 {
 	/**
 	 * Constructor.
 	 */
-	constructor() ERC721("MetaPacket", "PKT") { // The name and symbol of the token
-		owner = msg.sender;    // The owner of the contract is the one who deployed it
+	constructor() Sellable("MetaPacket", "PKT") { // The name and symbol of the token
+		// owner = msg.sender;    // The owner of the contract is the one who deployed it
 	}
 
 
@@ -158,17 +149,6 @@ contract MetaPacket is ERC721 {
 	 * Prompts are not generated here, but in the MetaFusionPresident.
 	 */
 	function openPacket(uint32 id) public onlyOwner onlyPacketOwner(id, tx.origin) {
-		_burn(uint256(id));
+		super.burn(uint256(id));
 	}
-
-    /**
-     * Approve a packet.
-     * 
-     * This function is overriden to allow the oracle to approve packets.
-     * 
-     * An approved packet can be bought.
-     */
-	function approve(address to, uint256 tokenId) public override onlyOwner {
-        _approve(to, tokenId, tx.origin);
-    }
 }

@@ -11,7 +11,7 @@ import time
 import logging
 import time
 import json
-import events
+from .events import public_key, private_key
 from .event_handler import handle_event, initOracleFilters
 import diffusers
 
@@ -117,8 +117,8 @@ def initData():
 @hydra.main(config_path="../../conf", config_name="oracle_config")
 def main(cfg):
     # set the public and private keys of the oracle
-    events.public_key = cfg.public_key
-    events.private_key = cfg.private_key
+    public_key = cfg.public_key
+    private_key = cfg.private_key
     # create the model
     model = initModel(cfg.model)
 

@@ -67,12 +67,12 @@ async function waitUserInput() {
 async function connect(contractName: string) {
 
     const SIMULATE_PACKET_FORGE = true;
-    const SIMULATE_PACKET_TRANSFER = false;
+    const SIMULATE_PACKET_TRANSFER = true;
     const SIMULATE_PACKET_LISTED = true;
     const SIMULATE_PACKET_OPENING = true;
     const SIMULATE_PROMPT_TRANSFER = true;
     const SIMULATE_IMAGE_CREATION = true;
-    const SIMULATE_IMAGE_TRANSFER = false;
+    const SIMULATE_IMAGE_TRANSFER = true;
     const SIMULATE_IMAGE_LISTED = true;
     const SIMULATE_IMAGE_DESTRUCTION = true;
 
@@ -174,14 +174,10 @@ async function connect(contractName: string) {
             let tx = await contract_seller.listPacket(packet_id, packet_transf_cost);
             await tx.wait();
 
-            await new Promise(r => setTimeout(r, 200));
 
             // buyer calls the willToBuy
             let tx2 = await contract_buyer.buyPacket(packet_id, { value: packet_transf_cost + transaction_fees});
             await tx2.wait();
-
-            // wait for the transfer to be completed
-            await new Promise(r => setTimeout(r, 2500));
 
             packets[seller.address][collection].splice(i, 1);
             packets[buyer.address][collection].push(packet_id);
@@ -227,7 +223,6 @@ async function connect(contractName: string) {
             await tx.wait();
             console.log('packet listed');
 
-            await new Promise(r => setTimeout(r, 200));
         }
 
         await waitUserInput();
@@ -297,12 +292,11 @@ async function connect(contractName: string) {
             let tx = await contract_seller.listPrompt(prompt_id, prompt_transf_cost);
             await tx.wait();
 
-            await new Promise(r => setTimeout(r, 200));
 
             let tx2 = await contract_buyer.buyPrompt(prompt_id, { value: prompt_transf_cost + transaction_fees});
             await tx2.wait();
 
-            await new Promise(r => setTimeout(r, 2500));
+            
             prompts[seller.address][collection].splice(i, 1);
             prompts[buyer.address][collection].push(prompt_id);
 
@@ -386,13 +380,8 @@ async function connect(contractName: string) {
         let tx = await contract_seller.listCard(image_id, image_transf_cost);
         await tx.wait();
 
-        await new Promise(r => setTimeout(r, 200));
-
         tx = await contract_buyer.buyCard(image_id, { value: image_transf_cost + transaction_fees});
         await tx.wait();
-
-
-        await new Promise(r => setTimeout(r, 5500));
 
         images[seller.address][collection].splice(0, 1);
         images[buyer.address][collection].push(image_id);
@@ -440,7 +429,6 @@ async function connect(contractName: string) {
             await tx.wait();
             console.log('image listed');
 
-            await new Promise(r => setTimeout(r, 200));
         }
 
         await waitUserInput();

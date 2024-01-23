@@ -9,7 +9,7 @@
 
 pragma solidity ^0.8.19;
 
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "./Sellable.sol";
 /**
  * ID: 0-12 collection
  *    13-15 prompt type
@@ -17,7 +17,7 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
  *    29-31 sequence number of the prompt in packet
  * 	  [31, 30, 29, 28, 27, 26, 25, 24, 23, 22, ... , 3, 2, 1, 0]
  *  */
-contract MetaPrompt is ERC721 {
+contract MetaPrompt is Sellable {
 
 
     /////////// CONSTANTS ///////////
@@ -30,24 +30,18 @@ contract MetaPrompt is ERC721 {
      * The number of different prompt types.
      */
     uint32 public immutable NUM_PROMPT_TYPES;
-
-    /////////// MODIFIERS ///////////
-
-    /**
-     * Only owner modifier.
-     */
-    modifier onlyOwner() {
-        require(msg.sender == owner, "You're not the owner!");
-        _;
-    }
+    
+    /////////// CONSTRUCTOR ///////////
 
     /**
      * Constructor.
      */
-    constructor(uint32 _NUM_PROMPT_TYPES) ERC721("MetaPrompt", "PRM") { // The name and symbol of the token
+    constructor(uint32 _NUM_PROMPT_TYPES) Sellable("MetaPrompt", "PRM") { // The name and symbol of the token
         owner = msg.sender;    // The owner of the contract is the one who deployed it
         NUM_PROMPT_TYPES = _NUM_PROMPT_TYPES;
     }
+
+    /////////// FUNCTIONS ///////////
 
     /**
      * Mint a new prompt.
@@ -89,7 +83,7 @@ contract MetaPrompt is ERC721 {
      * The user can send 0 for the prompts that are not used.
      * The character prompt is mandatory.
      */
-    function burnForImageGeneration(address promptOwner, uint32[] memory _prompts) public onlyOwner {
+    function burnForImageGeneration(uint32[] memory _prompts) public onlyOwner {
         // first check if the ether sent is enough
         require(_prompts[0] != 0, "Character prompt is missing!");
         // then check that the sender owns all the prompts
@@ -98,7 +92,7 @@ contract MetaPrompt is ERC721 {
             if (_prompts[i] != 0) {
                 uint16 collectionId = _getCollectionId(_prompts[0]);
                 // check that the sender owns the prompt, that it is of the correct type and that it belongs to the same collection
-                require(promptOwner == ownerOf(_prompts[i]), "Only the owner of the prompts can create an image!");
+                require(tx.origin == ownerOf(_prompts[i]), "Only the owner of the prompts can create an image!");
                 require(_getCollectionId(_prompts[i]) == collectionId, "The prompts must belong to the same collection!");
                 require(_getPromptType(_prompts[i]) == i, "The prompts must be of the correct type!");
             }
@@ -106,19 +100,8 @@ contract MetaPrompt is ERC721 {
         // burn the prompts
         for (uint8 i = 0; i < NUM_PROMPT_TYPES; i++) {
             if (_prompts[i] != 0){
-                _burn(_prompts[i]);
+                burn(_prompts[i]);
             }
     	}
-    }
-
-    /**
-     * Approve a prompt.
-     * 
-     * This function is overriden to allow the oracle to approve prompts.
-     * 
-     * An approved prompt can be bought.
-     */
-	function approve(address to, uint256 tokenId) public override onlyOwner {
-        _approve(to, tokenId, tx.origin);
     }
 }

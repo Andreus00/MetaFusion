@@ -24,24 +24,11 @@ import "./Card.sol";
  */
 contract MetaFusionPresident {
 
-    /////////////// VARIABLES ///////////////
+    /////////////// CONSTANTS ///////////////
     /**
      * @dev The owner of the contract. The owner is the only address that can call
      */
     address immutable private owner;  // Owner of the contract
-
-    /**
-     * @dev The MetaPrompt contract. This contract is an ERC721. It is used to keep track of the prompts.
-     */
-    MetaPrompt private metaPrompt;
-    /**
-     * @dev The MetaPacket contract. This contract is an ERC721. It is used to keep track of the packets.
-     */
-    MetaPacket private metaPacket;
-    /**
-     * @dev The MetaCard contract. This contract is an ERC721. It is used to keep track of the images.
-     */
-    MetaCard   private metaCard;
 
     /**
      * @dev The cost of a packet. This is the amount of ether that a user has to send to forge a packet.
@@ -71,6 +58,21 @@ contract MetaFusionPresident {
      * @dev The number of prompts in a packet.
      */
     uint8 public constant PACKET_SIZE = 8;  // Number of different prompt types
+
+    /////////////// VARIABLES ///////////////
+
+    /**
+     * @dev The MetaPrompt contract. This contract is an ERC721. It is used to keep track of the prompts.
+     */
+    MetaPrompt private metaPrompt;
+    /**
+     * @dev The MetaPacket contract. This contract is an ERC721. It is used to keep track of the packets.
+     */
+    MetaPacket private metaPacket;
+    /**
+     * @dev The MetaCard contract. This contract is an ERC721. It is used to keep track of the images.
+     */
+    MetaCard   private metaCard;
 
     /////////////// EVENTS ///////////////
 
@@ -115,37 +117,7 @@ contract MetaFusionPresident {
      * @param userId address of the user that destroyed the image
      */
     event DestroyImage(uint256 imageId, address indexed userId);
-    
-    /**
-     * Event emitted when an user wants to buy a listed packet.
-     * 
-     * @notice We decided to implement a different function for each type of token (packet, prompt, image).
-     * This is because we want to reduce the overhead of the user when he wants to buy a token.
-     * This idea of dividing the function in three different ones is also applied to the listing and transfer processes.
-     * 
-     * @param buyer the buyer
-     * @param seller the seller
-     * @param id the id of the packet
-     * @param value the amount of ether sent by the buyer
-     */
-    event WillToBuyPacket(address buyer, address seller, uint256 id, uint256 value);
-    /**
-     * Event emitted when an user wants to buy a listed prompt.
-     * 
-     * @param buyer the buyer
-     * @param seller the seller
-     * @param id the id of the prompt
-     * @param value the amount of ether sent by the buyer
-     */
-    event WillToBuyPrompt(address buyer, address seller, uint256 id, uint256 value);
-    /**
-     * Event emitted when an user wants to buy a listed image.
-     * @param buyer the buyer
-     * @param seller the seller
-     * @param id the id of the image
-     * @param value the amount of ether sent by the buyer
-     */
-    event WillToBuyImage(address buyer, address seller, uint256 id, uint256 value);
+
     
     /**
      * Event emitted when a packet is transfered from a seller to a buyer.
@@ -205,7 +177,7 @@ contract MetaFusionPresident {
     }
 
     /**
-     * This modifier checks if the sender sent enough ethers.
+     * This modifier checks if the sender sent enough ethers. Used for fees.
      * @param cost the amount of ethers that the sender has to send
      */
     modifier checkCost(uint256 cost) {
@@ -218,8 +190,8 @@ contract MetaFusionPresident {
      * @param packetId the id of the token
      * @param meta the meta contract of the token
      */
-    modifier isTokenListed(uint256 packetId, ERC721 meta) {
-        require(meta.getApproved(packetId) == address(this), "The token is not listed!");
+    modifier isTokenListed(uint256 packetId, Sellable meta) {
+        require(meta.isTokenListed(packetId), "The token is not listed!");
         _;
     }
 
@@ -371,7 +343,8 @@ contract MetaFusionPresident {
             uint32 prompt_id = prompts[i];
             prompts_array[i] = prompt_id;
         }
-        metaPrompt.burnForImageGeneration(msg.sender, prompts_array);
+        
+        metaPrompt.burnForImageGeneration(prompts_array);
 
         // merge prompt ids and mint the card
         uint256 mergedPrompts = _mergePrompts(prompts);
@@ -415,28 +388,31 @@ contract MetaFusionPresident {
         emit DestroyImage(imageId, msg.sender);
     }
 
-    /**
-     * This function can be called by users to express their will to buy a packet.
-     * They have to send an amount of ethers. An oracle will check if the amount is enough
-     * and, if so, it will call the 'transferPacket' function.
-     * @param packetId the id of the packet to buy
-     */
-    function buyPacket(uint32 packetId) public payable isTokenListed(packetId, metaPacket) {
-        // this function registers the will of the buyer to buy a listed packet
-        address seller = metaPacket.ownerOf(packetId);
-        emit WillToBuyPacket(msg.sender, seller, packetId, msg.value - TRANSACTION_FEES);
+    function _buyToken(uint256 tokenId, Sellable meta) private isTokenListed(tokenId, meta) returns (address, uint256){
+        uint256 token_cost = meta.getTokenCost(tokenId);
+        require(msg.value >= token_cost + TRANSACTION_FEES, "You didn't send enough ethers!");
+        address seller = meta.ownerOf(tokenId);
+        _payAddress(seller, token_cost);
+        meta.transferFrom(seller, msg.sender, tokenId);
+        return (seller, token_cost);
     }
 
     /**
-     * This function can be called by users to express their will to buy a prompt.
-     * They have to send an amount of ethers. An oracle will check if the amount is enough
-     * and, if so, it will call the 'transferPrompt' function.
+     * This function can be called by users to buy a packet.
+     * @param packetId the id of the packet to buy
+     */
+    function buyPacket(uint32 packetId) public payable {
+        (address seller, uint256 packet_cost) = _buyToken(packetId, metaPacket);
+        emit PacketTransfered(msg.sender, seller, packetId, packet_cost);
+    }
+
+    /**
+     * This function can be called by users to buy a prompt.
      * @param promptId the id of the prompt to buy
      */
-    function buyPrompt(uint32 promptId) public payable isTokenListed(promptId, metaPrompt) {
-        // this function registers the will of the buyer to buy a listed prompt
-        address seller = metaPrompt.ownerOf(promptId);
-        emit WillToBuyPrompt(msg.sender, seller, promptId, msg.value - TRANSACTION_FEES);
+    function buyPrompt(uint32 promptId) public payable {
+        (address seller, uint256 prompt_cost) = _buyToken(promptId, metaPrompt);
+        emit PromptTransfered(msg.sender, seller, promptId, prompt_cost);
     }
 
     /**
@@ -445,10 +421,10 @@ contract MetaFusionPresident {
      * and, if so, it will call the 'transferCard' function.
      * @param cardId the id of the card to buy
      */
-    function buyCard(uint256 cardId) public payable isTokenListed(cardId, metaCard) {
+    function buyCard(uint256 cardId) public payable {
         // this function registers the will of the buyer to buy a listed card
-        address seller = metaCard.ownerOf(cardId);
-        emit WillToBuyImage(msg.sender, seller, cardId, msg.value - TRANSACTION_FEES);
+        (address seller, uint256 card_cost) = _buyToken(cardId, metaCard);
+        emit CardTransfered(msg.sender, seller, cardId, card_cost);
     }
 
     /**
@@ -458,59 +434,8 @@ contract MetaFusionPresident {
      * @param value the amount of ether to send
      */
     function _payAddress(address _to, uint256 value) private {
-        (bool sent, bytes memory data) = _to.call{value: value}("");
+        (bool sent,) = _to.call{value: value}("");
         require(sent, "Failed to send Ether");
-    }
-
-
-    /**
-     * This function allows the owner to transfer a packet to a buyer and 
-     * @param buyer the buyer
-     * @param seller the seller
-     * @param packetId the image to transfer
-     * @param val the amount of ether to send to the seller
-     */
-    function transferPacket(address buyer, address seller, uint32 packetId, uint256 val) public isTokenListed(packetId, metaPacket) onlyOwner {
-        _payAddress(seller, val);
-        metaPacket.transferFrom(seller, buyer, packetId);
-        emit PacketTransfered(buyer, seller, packetId, val);
-    }
-
-    /**
-     * This function allows the owner to transfer a prompt to a buyer and send ethers to the seller.
-     * @param buyer the buyer
-     * @param seller the seller
-     * @param promptId the prompt to transfer
-     * @param val the amount of ether to send to the seller
-     */
-    function transferPrompt(address buyer, address seller, uint32 promptId, uint256 val) public isTokenListed(promptId, metaPrompt) onlyOwner {
-        _payAddress(seller, val);
-        metaPrompt.transferFrom(seller, buyer, promptId);
-        emit PromptTransfered(buyer, seller, promptId, val);
-    }
-
-    /**
-     * This function allows the owner to transfer a card to a buyer and send ethers to the seller.
-     * @param buyer the buyer
-     * @param seller the seller
-     * @param imageId the image to transfer
-     * @param val the amount of ether to send to the seller
-     */
-    function transferCard(address buyer, address seller, uint256 imageId, uint256 val) public isTokenListed(imageId, metaCard) onlyOwner {
-        _payAddress(seller, val);
-        metaCard.transferFrom(seller, buyer, imageId);
-        emit CardTransfered(buyer, seller, imageId, val);
-    }
-
-
-    /**
-     * If the buyer doesn't send enough ether, the owner can refund him.
-     * He will not refund fees.
-     * @param buyer the address that will receive the refund
-     * @param value the amount of ether to send
-     */
-    function refund(address buyer, uint256 value) public onlyOwner {
-        _payAddress(buyer, value);
     }
 
     /**
@@ -519,7 +444,7 @@ contract MetaFusionPresident {
      * @param price the price of the packet
      */
     function listPacket(uint32 packetId, uint256 price) public {
-        metaPacket.approve(address(this), packetId);
+        metaPacket.listToken(packetId, price);
         emit UpdateListPacket(packetId, price, true);
     }
 
@@ -529,7 +454,7 @@ contract MetaFusionPresident {
      * @param price the price of the prompt
      */
     function listPrompt(uint32 promptId, uint256 price) public {
-        metaPrompt.approve(address(this), promptId);
+        metaPrompt.listToken(promptId, price);
         emit UpdateListPrompt(promptId, price, true);
     }
 
@@ -539,42 +464,46 @@ contract MetaFusionPresident {
      * @param price the price of the image
      */
     function listCard(uint256 cardId, uint256 price) public {
-        metaCard.approve(address(this), cardId);
+        metaCard.listToken(cardId, price);
         emit UpdateListImage(cardId, price, true);
     }
 
     /**
      * Unlist a packet. Unlisting means that the owner of the packet doesn't allow the contract to transfer it anymore.
-     * It instead sets the approval to address(0).
+     * 
+     * It sets the approval to address(0).
      * @param packetId the id of the packet to unlist
      */
     function unlistPacket(uint32 packetId) public {
-        metaPacket.approve(address(0), packetId);
+        metaPacket.unlistToken(packetId);
         emit UpdateListPacket(packetId, 0,  false);
     }
 
     /**
      * Unlist a prompt. Unlisting means that the owner of the prompt doesn't allow the contract to transfer it anymore.
-     * It instead sets the approval to address(0).
+     * 
+     * It sets the approval to address(0).
      * @param promptId the id of the prompt to unlist
      */
     function unlistPrompt(uint32 promptId) public {
-        metaPrompt.approve(address(0), promptId);
+        metaPrompt.unlistToken(promptId);
         emit UpdateListPrompt(promptId, 0, false);
     }
 
     /**
      * Unlist an image. Unlisting means that the owner of the image doesn't allow the contract to transfer it anymore.
-     * It instead sets the approval to address(0).
+     * 
+     * It sets the approval to address(0).
      * @param cardId the id of the image to unlist
      */
     function unlistCard(uint256 cardId) public {
-        metaCard.approve(address(0), cardId);
+        metaCard.unlistToken(cardId);
         emit UpdateListImage(cardId, 0, false);
     }
 
     receive() external payable {} // to support receiving ETH by default
     fallback() external payable {}
+    
 
     function terminate() public onlyOwner {
         selfdestruct(payable(owner));
