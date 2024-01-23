@@ -106,7 +106,6 @@ class WordExtractor(object):
         }
 
         self.addCollection(1, test_collection)
-        self.addCollection(2, test_collection)
     
     def addCollection(self, collectionId: int, collection_prompts: Dict[int, Dict[str, List[Union[int, float]]]]):
         '''

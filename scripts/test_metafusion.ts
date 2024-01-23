@@ -12,7 +12,7 @@ const other2_priv_key: string = '0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC'
 
 const keys = [other_priv_key, other2_priv_key]
 
-const collections = [1, 2]
+const collections = [1]
 
 var packets: { [user: string] : { [collection: number] : number[]} } = {};
 packets[owner_priv_key] = {};
