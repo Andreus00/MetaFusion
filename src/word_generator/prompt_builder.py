@@ -48,7 +48,7 @@ class Prompt:
         if self.color:
             prompt += f", {self.color}"
         if self.tool:
-            prompt += f", {self.tool} in his hand"
+            prompt += f", with {self.tool} in his hand"
         if self.eyes:
             prompt += f", {self.eyes}"
         if self.style:
