@@ -6,6 +6,8 @@ from ..db.data import Data
 from ..utils.utils import *
 import json
 import ipfs_api
+import numpy as np
+from PIL import Image as Img
 
 PACKET_SIZE = 8
 NUM_PROMPT_TYPES = 6
@@ -115,9 +117,17 @@ class ImageCreated(Event):
         '''
         image = Image()
         imageCid = int256ToCid(self.IPFSCid)
-        # image.initWithParams(id=self.imageId, userIdHex=self.creator, hash=imageCid, data=data)
-        image.addIPFSHash(self.imageId, imageCid, data)
-        IPFSClient.download(imageCid, path=f"ipfs/image/{from_int_to_hex_str(self.imageId)}.png")
+        
+        # IPFSClient.download(imageCid, path=f"ipfs/image/{from_int_to_hex_str(self.imageId)}.png")
+        ipfs_data = IPFSClient.http_client.get_json(imageCid)
+
+        card_image = Img.fromarray(np.array(json.loads(ipfs_data["image"]), dtype='uint8'))
+
+        card_image.save(f"ipfs/image/{from_int_to_hex_str(self.imageId)}.png")
+        
+        prompts = ipfs_data["prompts"]
+
+        image.addIPFSHash(self.imageId, imageCid, prompts, data)
 
 @dataclass
 class DestroyImage(Event):

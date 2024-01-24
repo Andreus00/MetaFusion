@@ -12,6 +12,7 @@ import io
 from torch import Generator
 from PIL import Image
 import time
+import numpy as np
 
 from ..word_generator import Atlas
 from ..utils import utils
@@ -139,15 +140,20 @@ class CreateImage(Event):
         image: Image = model(prompt=prompt, generator=generator).images[0]
         
         # save the image in a buffer
-        img_byte_arr = io.BytesIO()
-        image.save(img_byte_arr, format='PNG')
-        img_byte = img_byte_arr.getvalue()
+        # img_byte_arr = io.BytesIO()
+        # image.save(img_byte_arr, format='PNG')
+        # img_byte = img_byte_arr.getvalue()
+
+        data = {
+            "image": json.dumps(np.array(image).tolist()),
+            "prompts": f"character: {character.name} hats: {hat.name} handoff: {tool.name} colors: {color.name} glasses: {eyes.name} style: {style.name}"
+        }
 
         # push the image on IPFS
-        cid = IPFSClient.http_client.add_bytes(img_byte)
+        cid = IPFSClient.http_client.add_json(data)
 
-        img_byte_arr.flush()
-        img_byte_arr.close()
+        # img_byte_arr.flush()
+        # img_byte_arr.close()
 
         # publish the cid on the blockchain
         cid_int = utils.cidToInt256(cid)

@@ -116,6 +116,7 @@ class Image:
 		self.isListed: bool = False
 		self.price: int = 0
 		self.userIdHex: str = ''
+		self.prompts: str = ''
 
 	def initWithDb(self, res):
 		self.id = res[0]
@@ -123,14 +124,16 @@ class Image:
 		self.isListed = res[2]
 		self.price = from_str_hex_to_int(res[3])
 		self.userIdHex = res[4].lower()
+		self.prompts = res[5]
 		return self
 	
-	def initWithParams(self, id: int, userIdHex: str, hash: str = None, isListed: bool = False, price: int = 0, data=None):
+	def initWithParams(self, id: int, userIdHex: str, hash: str = None, isListed: bool = False, price: int = 0, prompts: str = "", data=None):
 		self.id: int = id
 		self.hash: str = hash   # IPFS hash
 		self.isListed: bool = isListed
 		self.price: int = price
 		self.userIdHex: str = userIdHex.lower()
+		self.prompts: str = ''
 		if data is not None:
 			self.writeToDb(data)
 
@@ -154,9 +157,9 @@ class Image:
 		data.con.commit()
 		cur.close()
 	
-	def addIPFSHash(self, id, imageCid, data):
+	def addIPFSHash(self, id, imageCid, prompts, data):
 		cur = data.get_cursor()
-		cur.execute('UPDATE Images SET ipfsHash=? WHERE id=?', (imageCid, from_int_to_hex_str(id)))
+		cur.execute('UPDATE Images SET ipfsHash=?, prompts=? WHERE id=?', (imageCid, prompts, from_int_to_hex_str(id)))
 		data.con.commit()
 		cur.close()
 
@@ -422,7 +425,7 @@ class Data:
 	def get_all_images(self, only_listed=True):
 		cur = self.get_cursor()
 		try:
-			cur.execute('SELECT id, isListed, price, collectionId FROM Images WHERE isListed=1')
+			cur.execute('SELECT id, isListed, price, collectionId, prompts FROM Images WHERE isListed=1')
 			res = cur.fetchall()
 			ret = []
 			if res is not None:
@@ -432,6 +435,7 @@ class Data:
 						"isListed": row[1],
 						"price": from_str_hex_to_int(row[2]),
 						"collectionId": row[3],
+						"prompts": row[4],
 						"nft_type": 2
 					})
 			return ret
