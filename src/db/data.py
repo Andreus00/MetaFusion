@@ -648,14 +648,14 @@ class Data:
 		finally:
 			cur.close()
 
-	def get_remainig_number_of_packets(self):
+	def get_remainig_number_of_packets(self, collectionId: int):
 		cur = self.get_cursor()
 		TOT_PACKETS = 750
 		try:
-			cur.execute('SELECT COUNT(ID) as c FROM Packets')
+			cur.execute('SELECT COUNT(ID) as c FROM Packets WHERE collectionId=?', (collectionId,))
 			packets_to_open = cur.fetchone()[0]
 			
-			cur.execute('SELECT COUNT(ID) as c FROM Prompts')
+			cur.execute('SELECT COUNT(ID) as c FROM Prompts WHERE collectionId=?', (collectionId,))
 			prompts_generated = cur.fetchone()[0]
 			packets_opened = prompts_generated // 8
 

@@ -74,6 +74,41 @@ paths:
         '401': { $ref: '#/components/responses/UserNotAuthorized' }
         '500': { $ref: '#/components/responses/InternalServerError' }
     
+
+
+  /packets/{collectionId}/remaining:
+    get: 
+      tags: [ "Packet"]
+      operationId: Get packets remaining
+      summary: Get packets remaining
+      description: "Get the number of packets remaining."
+      parameters:
+        - name: collectionId
+          schema:
+            format: number
+            type: integer
+            example: 1
+          in: path
+          description: "collection id"
+          required: true
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  remaining:
+                    type: number
+                    format: integer
+                    example: 548
+                  
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/UserNotAuthorized' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+
+
   /packet/{packetid}/transactions:
     get:
       tags: [ "Packet"]

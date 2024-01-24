@@ -181,12 +181,12 @@ async def set_username(userId: str, name: str, r: Request):
 
 
 
-@app.get("/packets/remaining")
-async def get_remainig_number_of_packets(r: Request):
+@app.get("/packets/{collectionId}/remaining")
+async def get_remainig_number_of_packets(collectionId: int, r: Request):
     '''
     Get the name of a user.
     '''
-    num_packets = database.get_remainig_number_of_packets()
+    num_packets = database.get_remainig_number_of_packets(collectionId)
     return {"remaining": num_packets}
 
 
