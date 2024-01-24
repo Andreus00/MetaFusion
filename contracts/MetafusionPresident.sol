@@ -187,11 +187,11 @@ contract MetaFusionPresident {
 
     /**
      * This modifer checks if the token is listed.
-     * @param packetId the id of the token
+     * @param tokenId the id of the token
      * @param meta the meta contract of the token
      */
-    modifier isTokenListed(uint256 packetId, Sellable meta) {
-        require(meta.isTokenListed(packetId), "The token is not listed!");
+    modifier isTokenListed(uint256 tokenId, Sellable meta) {
+        require(meta.isTokenListed(tokenId), "The token is not listed!");
         _;
     }
 

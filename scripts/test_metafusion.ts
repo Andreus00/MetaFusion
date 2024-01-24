@@ -34,6 +34,7 @@ const NUM_PROMPT_PER_IMAGE = 6;
 const NUM_PACKET_TRANSFERS = 6;
 const NUM_PACKET_LISTED = 5;
 const NUM_PROMPT_TRANSFERS = 12;
+const NUM_PROMPT_LISTED = 5;
 const NUM_IMAGE_TRANSFERS = 6;
 const NUM_IMAGE_LISTED = 3;
 
@@ -71,6 +72,7 @@ async function connect(contractName: string) {
     const SIMULATE_PACKET_LISTED = true;
     const SIMULATE_PACKET_OPENING = true;
     const SIMULATE_PROMPT_TRANSFER = true;
+    const SIMULATE_PROMPT_LISTED = true;
     const SIMULATE_IMAGE_CREATION = true;
     const SIMULATE_IMAGE_TRANSFER = true;
     const SIMULATE_IMAGE_LISTED = true;
@@ -225,6 +227,8 @@ async function connect(contractName: string) {
 
         }
 
+        console.log(packets)
+
         await waitUserInput();
     }
 
@@ -310,6 +314,37 @@ async function connect(contractName: string) {
 
             let balance_buyer = await buyer.provider.getBalance(other2_priv_key);
             console.log('balance_buyer: ', balance_buyer);
+        }
+
+        await waitUserInput();
+    }
+
+    if (SIMULATE_PROMPT_LISTED) {
+
+        console.log('PROMPT LISTING');
+
+        var lister = wallet_other;
+        var contract_lister = contract_other;
+
+        for (let i = 0; i < NUM_PROMPT_LISTED; i++) {
+
+            if (i % 2 == 0) {
+                lister = wallet_other;
+                contract_lister = contract_other;
+            }
+            else {
+                lister = wallet_other2;
+                contract_lister = contract_other_2;
+            }
+
+            // seller lists packet for sale
+            let collection = collections[0];
+            let prompt_id = prompts[lister.address][collection][i];
+
+            let tx = await contract_lister.listPrompt(prompt_id, prompt_transf_cost);
+            await tx.wait();
+            console.log('prompt listed');
+
         }
 
         await waitUserInput();

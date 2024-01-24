@@ -498,7 +498,7 @@ class Data:
 	def remove_packet_from(self, packet_id: int, user_id: str):
 		cur = self.get_cursor()
 		try:
-			cur.execute('DELETE FROM Packets WHERE id=? and userHex=?', (from_int_to_hex_str(packet_id), user_id))
+			cur.execute('DELETE FROM Packets WHERE id=?', (from_int_to_hex_str(packet_id),))
 			self.con.commit()
 			return True
 		finally:
