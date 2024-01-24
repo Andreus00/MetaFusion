@@ -177,7 +177,7 @@ async function connect(contractName: string) {
             await tx.wait();
 
             // wait for the transaction to be mined
-            await new Promise(r => setTimeout(r, 100)); 
+            // await new Promise(r => setTimeout(r, 100)); 
 
 
             // buyer calls the willToBuy
@@ -299,7 +299,7 @@ async function connect(contractName: string) {
             let tx = await contract_seller.listPrompt(prompt_id, prompt_transf_cost);
             await tx.wait();
 
-            await new Promise(r => setTimeout(r, 100)); 
+            // await new Promise(r => setTimeout(r, 100)); 
 
             let tx2 = await contract_buyer.buyPrompt(prompt_id, { value: prompt_transf_cost + transaction_fees});
             await tx2.wait();
@@ -419,7 +419,7 @@ async function connect(contractName: string) {
         let tx = await contract_seller.listCard(image_id, image_transf_cost);
         await tx.wait();
 
-        await new Promise(r => setTimeout(r, 100)); 
+        // await new Promise(r => setTimeout(r, 100)); 
 
         tx = await contract_buyer.buyCard(image_id, { value: image_transf_cost + transaction_fees});
         await tx.wait();
