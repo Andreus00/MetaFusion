@@ -33,7 +33,7 @@ contract MetaFusionPresident {
     /**
      * @notice The hash of the project. This is used to verify the authenticity of the project.
      */
-    uint128 immutable public project_hash;
+    uint128 private project_hash;
 
     /**
      * @dev The cost of a packet. This is the amount of ether that a user has to send to forge a packet.
