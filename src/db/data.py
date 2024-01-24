@@ -647,6 +647,21 @@ class Data:
 			return True
 		finally:
 			cur.close()
+
+	def get_remainig_number_of_packets(self):
+		cur = self.get_cursor()
+		TOT_PACKETS = 750
+		try:
+			cur.execute('SELECT COUNT(ID) as c FROM Packets')
+			packets_to_open = cur.fetchone()[0]
+			
+			cur.execute('SELECT COUNT(ID) as c FROM Prompts')
+			prompts_generated = cur.fetchone()[0]
+			packets_opened = prompts_generated // 8
+
+			return TOT_PACKETS - (packets_to_open + packets_opened)
+		finally:
+			cur.close()
 		
 	def fromJson(self, data):
 		obj = json.loads(data)

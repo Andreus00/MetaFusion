@@ -1,0 +1,1 @@
+find . -type f | grep -vf hash_ignore.txt | md5sum | LC_ALL=C sort | md5sum

@@ -1,0 +1,12 @@
+.*artifacts.*
+.*typechain-*
+.*\.git.*
+.*\.cache.*
+outputs
+cache
+node_modules
+\.\/\.hydra
+ipfs
+\.db
+package
+calculate_project_hash.sh

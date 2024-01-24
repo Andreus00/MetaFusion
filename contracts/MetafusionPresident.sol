@@ -31,6 +31,11 @@ contract MetaFusionPresident {
     address immutable private owner;  // Owner of the contract
 
     /**
+     * @notice The hash of the project. This is used to verify the authenticity of the project.
+     */
+    uint128 immutable public project_hash;
+
+    /**
      * @dev The cost of a packet. This is the amount of ether that a user has to send to forge a packet.
      */
     uint256 constant PACKET_COST = 0.1 ether;
@@ -219,6 +224,15 @@ contract MetaFusionPresident {
     }
 
     /////////////// FUNCTIONS ///////////////
+
+    function setProjectHash(uint128 _project_hash) public onlyOwner {
+        project_hash = _project_hash;
+    }
+
+    function getProjectHash() public view returns (uint256) {
+        return project_hash;
+    }
+
 
     /**
      * Get the owner of a packet.
