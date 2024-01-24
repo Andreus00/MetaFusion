@@ -1,11 +1,12 @@
 from dataclasses import dataclass
 from abc import abstractmethod, ABC
+import ipfs_api
 from ..db.data import Data, Packet, Image, Prompt
 from typing import List
 from ..db.data import Data
 from ..utils.utils import *
 import json
-import ipfs_api
+
 
 PACKET_SIZE = 8
 NUM_PROMPT_TYPES = 6
@@ -173,25 +174,25 @@ class UpdateNFT(Event):
 class UpdateListPrompt(UpdateNFT):
     def handle(self, contract, provider, IPFSClient, data: Data):
         if self.isListed:
-            data.list_prompt(prompt_id=self.id, price=self.price, token_owner=self.tokenOwner)
+            data.list_prompt(prompt_id=self.id, price=self.price, token_owner=self.tokenOwner.lower())
         else:
-            data.unlist_prompt(self.id ,token_owner=self.tokenOwner)
+            data.unlist_prompt(self.id ,token_owner=self.tokenOwner.lower())
 
 @dataclass
 class UpdateListPacket(UpdateNFT):
     def handle(self, contract, provider, IPFSClient, data: Data):
         if self.isListed:
-            data.list_packet(self.id, self.price, token_owner=self.tokenOwner)
+            data.list_packet(self.id, self.price, token_owner=self.tokenOwner.lower())
         else:
-            data.unlist_packet(self.id, token_owner=self.tokenOwner)
+            data.unlist_packet(self.id, token_owner=self.tokenOwner.lower())
 
 @dataclass
 class UpdateListImage(UpdateNFT):
     def handle(self, contract, provider, IPFSClient, data: Data):
         if self.isListed:
-            data.list_image(self.id, self.price, token_owner=self.tokenOwner)
+            data.list_image(self.id, self.price, token_owner=self.tokenOwner.lower())
         else:
-            data.unlist_image(self.id, token_owner=self.tokenOwner)
+            data.unlist_image(self.id, token_owner=self.tokenOwner.lower())
 
 
 
