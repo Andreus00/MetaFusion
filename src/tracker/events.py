@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from abc import abstractmethod, ABC
+import ipfs_api
 from ..db.data import Data, Packet, Image, Prompt
 from typing import List
 from ..db.data import Data
@@ -156,20 +157,20 @@ class TransferEvent(Event):
 class PacketTransfered(TransferEvent):
 
     def handle(self, contract, provider, IPFSClient, data: Data):
-        data.transfer_packet(self.id, self.seller, self.buyer)
+        data.transfer_packet(self.id, self.seller, self.buyer, self.value)
 
 @dataclass
 class PromptTransfered(TransferEvent):
 
     def handle(self, contract, provider, IPFSClient, data: Data):
-        data.transfer_prompt(self.id, self.seller, self.buyer)
+        data.transfer_prompt(self.id, self.seller, self.buyer, self.value)
         
 
 @dataclass
 class CardTransfered(TransferEvent):
 
     def handle(self, contract, provider, IPFSClient, data: Data):
-        data.transfer_image(self.id, self.seller, self.buyer)
+        data.transfer_image(self.id, self.seller, self.buyer, self.value)
 
 
 @dataclass 
@@ -177,30 +178,31 @@ class UpdateNFT(Event):
     id: int
     isListed: bool
     price: int
+    tokenOwner: str
 
 @dataclass
 class UpdateListPrompt(UpdateNFT):
     def handle(self, contract, provider, IPFSClient, data: Data):
         if self.isListed:
-            data.list_prompt(self.id, self.price)
+            data.list_prompt(prompt_id=self.id, price=self.price, token_owner=self.tokenOwner.lower())
         else:
-            data.unlist_prompt(self.id)
+            data.unlist_prompt(self.id ,token_owner=self.tokenOwner.lower())
 
 @dataclass
 class UpdateListPacket(UpdateNFT):
     def handle(self, contract, provider, IPFSClient, data: Data):
         if self.isListed:
-            data.list_packet(self.id, self.price)
+            data.list_packet(self.id, self.price, token_owner=self.tokenOwner.lower())
         else:
-            data.unlist_packet(self.id)
+            data.unlist_packet(self.id, token_owner=self.tokenOwner.lower())
 
 @dataclass
 class UpdateListImage(UpdateNFT):
     def handle(self, contract, provider, IPFSClient, data: Data):
         if self.isListed:
-            data.list_image(self.id, self.price)
+            data.list_image(self.id, self.price, token_owner=self.tokenOwner.lower())
         else:
-            data.unlist_image(self.id)
+            data.unlist_image(self.id, token_owner=self.tokenOwner.lower())
 
 
 

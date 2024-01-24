@@ -154,22 +154,25 @@ contract MetaFusionPresident {
      * @param id the id of the packet
      * @param price the price of the packet
      * @param isListed true if the packet is listed, false otherwise
+     * @param tokenOwner address of the token owner
      */
-    event UpdateListPrompt(uint32 id, uint256 price, bool isListed);
+    event UpdateListPrompt(uint32 id, uint256 price, bool isListed, address tokenOwner);
     /**
      * Event emitted when a prompt is listed or unlisted.
      * @param id the id of the prompt
      * @param price the price of the prompt
      * @param isListed true if the prompt is listed, false otherwise
+     * @param tokenOwner address of the token owner
      */
-    event UpdateListPacket(uint32 id, uint256 price, bool isListed);
+    event UpdateListPacket(uint32 id, uint256 price, bool isListed, address tokenOwner);
     /**
      * Event emitted when an image is listed or unlisted.
      * @param id the id of the image
      * @param price the price of the image
      * @param isListed true if the image is listed, false otherwise
+     * @param tokenOwner address of the token owner
      */
-    event UpdateListImage(uint256 id, uint256 price, bool isListed);
+    event UpdateListImage(uint256 id, uint256 price, bool isListed, address tokenOwner);
 
     /////////////// MODIFIERS ///////////////
 
@@ -459,7 +462,7 @@ contract MetaFusionPresident {
      */
     function listPacket(uint32 packetId, uint256 price) public {
         metaPacket.listToken(packetId, price);
-        emit UpdateListPacket(packetId, price, true);
+        emit UpdateListPacket(packetId, price, true, msg.sender);
     }
 
     /**
@@ -469,7 +472,7 @@ contract MetaFusionPresident {
      */
     function listPrompt(uint32 promptId, uint256 price) public {
         metaPrompt.listToken(promptId, price);
-        emit UpdateListPrompt(promptId, price, true);
+        emit UpdateListPrompt(promptId, price, true, msg.sender);
     }
 
     /**
@@ -479,7 +482,7 @@ contract MetaFusionPresident {
      */
     function listCard(uint256 cardId, uint256 price) public {
         metaCard.listToken(cardId, price);
-        emit UpdateListImage(cardId, price, true);
+        emit UpdateListImage(cardId, price, true, msg.sender);
     }
 
     /**
@@ -490,7 +493,7 @@ contract MetaFusionPresident {
      */
     function unlistPacket(uint32 packetId) public {
         metaPacket.unlistToken(packetId);
-        emit UpdateListPacket(packetId, 0,  false);
+        emit UpdateListPacket(packetId, 0,  false, msg.sender);
     }
 
     /**
@@ -501,7 +504,7 @@ contract MetaFusionPresident {
      */
     function unlistPrompt(uint32 promptId) public {
         metaPrompt.unlistToken(promptId);
-        emit UpdateListPrompt(promptId, 0, false);
+        emit UpdateListPrompt(promptId, 0, false, msg.sender);
     }
 
     /**
@@ -512,7 +515,7 @@ contract MetaFusionPresident {
      */
     function unlistCard(uint256 cardId) public {
         metaCard.unlistToken(cardId);
-        emit UpdateListImage(cardId, 0, false);
+        emit UpdateListImage(cardId, 0, false, msg.sender);
     }
 
     receive() external payable {} // to support receiving ETH by default
