@@ -439,57 +439,59 @@ class Data:
 			cur.close()
 	
 
-	def list_packet(self, packet_id: int, price: int):
+	def list_packet(self, packet_id: int, price: int, token_owner: str):
 		cur = self.get_cursor()
 		try:
-			cur.execute('UPDATE Packets SET isListed = 1, price = ? WHERE id = ?', 
-				(from_int_to_hex_str(price), from_int_to_hex_str(packet_id)))
+			cur.execute('UPDATE Packets SET isListed = 1, price = ? WHERE id = ? AND userHex = ?', 
+				(from_int_to_hex_str(price), from_int_to_hex_str(packet_id), token_owner))
 			self.con.commit()
 			return True
 		finally:
 			cur.close()
 	
-	def list_prompt(self, prompt_id: int, price: int):
+	def list_prompt(self, prompt_id: int, price: int, token_owner: str):
 		cur = self.get_cursor()
 		try:
-			cur.execute('UPDATE Prompts SET isListed = 1, price = ? WHERE id = ?', (from_int_to_hex_str(price), from_int_to_hex_str(prompt_id)))
+			cur.execute('UPDATE Prompts SET isListed = 1, price = ? WHERE id = ? AND userHex = ?', 
+			   (from_int_to_hex_str(price), from_int_to_hex_str(prompt_id), token_owner))
 			self.con.commit()
 			return True
 		finally:
 			cur.close()
 
-	def list_image(self, image_id: int, price: int):
+	def list_image(self, image_id: int, price: int, token_owner: str):
 		cur = self.get_cursor()
 		try:
-			cur.execute('UPDATE Images SET isListed = 1, price = ? WHERE id = ?', (from_int_to_hex_str(price), from_int_to_hex_str(image_id)))
+			cur.execute('UPDATE Images SET isListed = 1, price = ? WHERE id = ? AND userHex = ?', 
+			   (from_int_to_hex_str(price), from_int_to_hex_str(image_id), token_owner))
 			self.con.commit()
 			return True
 		finally:
 			cur.close()
 
 
-	def unlist_prompt(self, prompt_id: int):
+	def unlist_prompt(self, prompt_id: int, token_owner: str):
 		cur = self.get_cursor()
 		try:
-			cur.execute('UPDATE Prompts SET isListed = 0 WHERE id = ?', (from_int_to_hex_str(prompt_id),))
+			cur.execute('UPDATE Prompts SET isListed = 0 WHERE id = ? AND userHex = ?', (from_int_to_hex_str(prompt_id), token_owner))
 			self.con.commit()
 			return True
 		finally:
 			cur.close()
 
-	def unlist_image(self, image_id: int):
+	def unlist_image(self, image_id: int, token_owner: str):
 		cur = self.get_cursor()
 		try:
-			cur.execute('UPDATE Images SET isListed = 0 WHERE id = ?', (from_int_to_hex_str(image_id),))
+			cur.execute('UPDATE Images SET isListed = 0 WHERE id = ? AND userHex = ?', (from_int_to_hex_str(image_id), token_owner))
 			self.con.commit()
 			return True
 		finally:
 			cur.close()
 
-	def unlist_packet(self, packet_id: int):
+	def unlist_packet(self, packet_id: int, token_owner: str):
 		cur = self.get_cursor()
 		try:
-			cur = cur.execute('UPDATE Packets SET isListed = 0 WHERE id = ?', (from_int_to_hex_str(packet_id),))
+			cur = cur.execute('UPDATE Packets SET isListed = 0 WHERE id = ? AND userHex = ?', (from_int_to_hex_str(packet_id), token_owner))
 			self.con.commit()
 			return True
 		finally:
