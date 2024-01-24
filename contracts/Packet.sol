@@ -30,11 +30,6 @@ contract MetaPacket is Sellable {
 	 */
 	uint16 constant MAX_PACKETS_PER_COLLECTION = 750;  // The maximum number of packets that can be minted for each collection.
 
-	// /**
-	//  * The owner of the contract.
-	//  */
-	// address immutable private owner;
-
 	/////////////// VARIABLES ///////////////
 
 	/**
@@ -85,9 +80,7 @@ contract MetaPacket is Sellable {
 	/**
 	 * Constructor.
 	 */
-	constructor() Sellable("MetaPacket", "PKT") { // The name and symbol of the token
-		// owner = msg.sender;    // The owner of the contract is the one who deployed it
-	}
+	constructor() Sellable("MetaPacket", "PKT") {} // The name and symbol of the token
 
 
 	/////////////// FUNCTIONS ///////////////

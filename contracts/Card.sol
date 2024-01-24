@@ -22,22 +22,14 @@ import "./Sellable.sol";
 
 contract MetaCard is Sellable {
 
-    /////////// CONSTANTS ///////////
-
-    // /**
-    //  * The owner of the contract.
-    //  */
-    // address immutable private owner;  // the owner of the contract; alias president
-
 
     /////////// CONSTRUCTOR ///////////
 
     /**
      * Constructor.
      */
-    constructor() Sellable("MetaCard", "MCD") { // The name and symbol of the token
-        // owner = msg.sender;    // The owner of the contract is the one who deployed it
-    }
+    constructor() Sellable("MetaCard", "MCD") {} // The name and symbol of the token
+
 
     /////////// FUNCTIONS ///////////
 

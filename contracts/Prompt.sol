@@ -21,11 +21,7 @@ contract MetaPrompt is Sellable {
 
 
     /////////// CONSTANTS ///////////
-    /**
-     * The owner of the contract.
-     */
-    address immutable private owner;
-
+    
     /**
      * The number of different prompt types.
      */
@@ -37,7 +33,6 @@ contract MetaPrompt is Sellable {
      * Constructor.
      */
     constructor(uint32 _NUM_PROMPT_TYPES) Sellable("MetaPrompt", "PRM") { // The name and symbol of the token
-        owner = msg.sender;    // The owner of the contract is the one who deployed it
         NUM_PROMPT_TYPES = _NUM_PROMPT_TYPES;
     }
 
