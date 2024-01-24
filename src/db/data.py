@@ -536,7 +536,7 @@ class Data:
 			cur.close()
 
 	
-	def addTransferEvent(self, objId: int, from_user_id: str, to_user_id: str, objType):
+	def addTransferEvent(self, objId: int, from_user_id: str, to_user_id: str, objType, price: int):
 		obj = None
 		if objType == 0:
 			obj = self.get_packet(from_int_to_hex_str(objId))
@@ -550,7 +550,7 @@ class Data:
 		
 		cur = self.get_cursor()
 		try:
-			cur.execute('INSERT INTO SellEvents(objId, userFromHex, userToHex, price, type) values (?, ?, ?, ?, ?)', (from_int_to_hex_str(objId), from_user_id, to_user_id,from_int_to_hex_str(obj.price), objType))
+			cur.execute('INSERT INTO SellEvents(objId, userFromHex, userToHex, price, type) values (?, ?, ?, ?, ?)', (from_int_to_hex_str(objId), from_user_id, to_user_id,from_int_to_hex_str(price), objType))
 			self.con.commit()
 			return True
 		finally:
@@ -593,32 +593,32 @@ class Data:
 		finally:
 			cur.close()
 
-	def transfer_packet(self, packet_id: int, from_user_id: str, to_user_id: str):
+	def transfer_packet(self, packet_id: int, from_user_id: str, to_user_id: str, price: int):
 		cur = self.get_cursor()
 		try:
 			cur.execute('UPDATE Packets SET userHex = ?, isListed = 0 WHERE id = ?', (to_user_id.lower(), from_int_to_hex_str(packet_id)))
 			self.con.commit()
-			self.addTransferEvent(packet_id, from_user_id.lower(), to_user_id.lower(), 0)
+			self.addTransferEvent(packet_id, from_user_id.lower(), to_user_id.lower(), 0, price)
 			return True
 		finally:
 			cur.close()
 
-	def transfer_prompt(self, prompt_id: int, from_user_id: str, to_user_id: str):
+	def transfer_prompt(self, prompt_id: int, from_user_id: str, to_user_id: str, price: int):
 		cur = self.get_cursor()
 		try:
 			cur.execute('UPDATE Prompts SET userHex = ?, isListed = 0 WHERE id = ?', (to_user_id.lower(), from_int_to_hex_str(prompt_id)))
 			self.con.commit()
-			self.addTransferEvent(prompt_id, from_user_id.lower(), to_user_id.lower(), 1)
+			self.addTransferEvent(prompt_id, from_user_id.lower(), to_user_id.lower(), 1, price)
 			return True
 		finally:
 			cur.close()
 
-	def transfer_image(self, image_id: int, from_user_id: str, to_user_id: str):
+	def transfer_image(self, image_id: int, from_user_id: str, to_user_id: str, price: int):
 		cur = self.get_cursor()
 		try:
 			cur.execute('UPDATE Images SET userHex = ?, isListed = 0 WHERE id = ?', (to_user_id.lower(), from_int_to_hex_str(image_id)))
 			self.con.commit()
-			self.addTransferEvent(image_id, from_user_id.lower(), to_user_id.lower(), 2)
+			self.addTransferEvent(image_id, from_user_id.lower(), to_user_id.lower(), 2, price)
 			return True
 		finally:
 			cur.close()

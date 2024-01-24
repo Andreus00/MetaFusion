@@ -147,20 +147,20 @@ class TransferEvent(Event):
 class PacketTransfered(TransferEvent):
 
     def handle(self, contract, provider, IPFSClient, data: Data):
-        data.transfer_packet(self.id, self.seller, self.buyer)
+        data.transfer_packet(self.id, self.seller, self.buyer, self.value)
 
 @dataclass
 class PromptTransfered(TransferEvent):
 
     def handle(self, contract, provider, IPFSClient, data: Data):
-        data.transfer_prompt(self.id, self.seller, self.buyer)
+        data.transfer_prompt(self.id, self.seller, self.buyer, self.value)
         
 
 @dataclass
 class CardTransfered(TransferEvent):
 
     def handle(self, contract, provider, IPFSClient, data: Data):
-        data.transfer_image(self.id, self.seller, self.buyer)
+        data.transfer_image(self.id, self.seller, self.buyer, self.value)
 
 
 @dataclass 
