@@ -29,14 +29,16 @@ images[owner_priv_key] = {};
 images[other_priv_key] = {};
 images[other2_priv_key] = {};
 
-const FORGE_TOT_PACKETS = 6;
+const FORGE_TOT_PACKETS = 100;
 const NUM_PROMPT_PER_IMAGE = 6;
-const NUM_PACKET_TRANSFERS = 6;
-const NUM_PACKET_LISTED = 5;
-const NUM_PROMPT_TRANSFERS = 12;
-const NUM_PROMPT_LISTED = 5;
+const NUM_PACKET_TRANSFERS = 300;
+const NUM_PACKET_LISTED = 20;
+const NUM_PACKET_OPENED = 30;
+const NUM_PROMPT_TRANSFERS = 40;
+const NUM_PROMPT_LISTED = 100;
+const NUM_IMAGE_CREATED = 20;
 const NUM_IMAGE_TRANSFERS = 6;
-const NUM_IMAGE_LISTED = 3;
+const NUM_IMAGE_LISTED = 10;
 
 function genPKUUID(collection: number , idInCollection: number){
     return ((idInCollection) << (16)) | (collection)
@@ -68,10 +70,10 @@ async function waitUserInput() {
 async function connect(contractName: string) {
 
     const SIMULATE_PACKET_FORGE = true;
-    const SIMULATE_PACKET_TRANSFER = true;
+    const SIMULATE_PACKET_TRANSFER = false;
     const SIMULATE_PACKET_LISTED = true;
     const SIMULATE_PACKET_OPENING = true;
-    const SIMULATE_PROMPT_TRANSFER = true;
+    const SIMULATE_PROMPT_TRANSFER = false;
     const SIMULATE_PROMPT_LISTED = true;
     const SIMULATE_IMAGE_CREATION = true;
     const SIMULATE_IMAGE_TRANSFER = true;
@@ -171,7 +173,8 @@ async function connect(contractName: string) {
 
             // seller lists packet for sale
             let collection = collections[(collections.length - 1) % (i + 1)];
-            let packet_id = packets[seller.address][collection][i];
+            let idx = getRandomInt(packets[seller.address][collection].length);
+            let packet_id = packets[seller.address][collection][idx];
 
             let tx = await contract_seller.listPacket(packet_id, packet_transf_cost);
             await tx.wait();
@@ -184,7 +187,7 @@ async function connect(contractName: string) {
             let tx2 = await contract_buyer.buyPacket(packet_id, { value: packet_transf_cost + transaction_fees});
             await tx2.wait();
 
-            packets[seller.address][collection].splice(i, 1);
+            packets[seller.address][collection].splice(idx, 1);
             packets[buyer.address][collection].push(packet_id);
 
             // check the ownership on blockchain
@@ -222,7 +225,8 @@ async function connect(contractName: string) {
 
             // seller lists packet for sale
             let collection = collections[(collections.length - 1) % (i + 1)];
-            let packet_id = packets[lister.address][collection][i];
+            let idx = getRandomInt(packets[lister.address][collection].length);
+            let packet_id = packets[lister.address][collection][idx];
 
             let tx = await contract_lister.listPacket(packet_id, packet_transf_cost);
             await tx.wait();
@@ -248,7 +252,7 @@ async function connect(contractName: string) {
                 let cur_address = await cur_contract.runner?.getAddress();
                 let cur_packets = packets[cur_address][collection];
                 prompts[cur_address][collection] = [];
-                for (let k = 0; k < cur_packets.length; k++) {
+                for (let k = 0; k < NUM_PACKET_OPENED / contracts.length; k++) {
                     let packet_id =cur_packets[k];
                     let tx = await cur_contract.openPacket(packet_id, { value: packet_opening_fees });
                     let rc = await tx.wait();
@@ -294,7 +298,8 @@ async function connect(contractName: string) {
             }
 
             let collection = collections[(collections.length - 1) % (i + 1)];
-            let prompt_id = prompts[seller.address][collection][i];
+            let idx = getRandomInt(prompts[seller.address][collection].length);
+            let prompt_id = prompts[seller.address][collection][idx];
 
             let tx = await contract_seller.listPrompt(prompt_id, prompt_transf_cost);
             await tx.wait();
@@ -305,7 +310,7 @@ async function connect(contractName: string) {
             await tx2.wait();
 
             
-            prompts[seller.address][collection].splice(i, 1);
+            prompts[seller.address][collection].splice(idx, 1);
             prompts[buyer.address][collection].push(prompt_id);
 
             // check the ownership on blockchain
@@ -343,7 +348,8 @@ async function connect(contractName: string) {
 
             // seller lists packet for sale
             let collection = collections[0];
-            let prompt_id = prompts[lister.address][collection][i];
+            let idx = getRandomInt(prompts[lister.address][collection].length);
+            let prompt_id = prompts[lister.address][collection][idx];
 
             let tx = await contract_lister.listPrompt(prompt_id, prompt_transf_cost);
             await tx.wait();
@@ -358,7 +364,7 @@ async function connect(contractName: string) {
         
         console.log('IMAGE CREATION');
 
-        const TOT_IMAGES: number = 8;   // try to create 8 images. Random users, random collections. 
+        const TOT_IMAGES: number = NUM_IMAGE_CREATED;   // try to create 8 images. Random users, random collections. 
                                         // If the user does not have characters in the collection, skip the image creation.
 
         var freezed_prompts = new Set();

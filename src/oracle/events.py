@@ -6,13 +6,11 @@ This file contains the events that the oracle can handle.
 from dataclasses import dataclass
 from abc import abstractmethod, ABC
 from typing import List
-import os
 import json
-import io
 from torch import Generator
 from PIL import Image
-import time
 import numpy as np
+import torch
 
 from ..word_generator import Atlas
 from ..utils import utils
@@ -133,20 +131,31 @@ class CreateImage(Event):
                     .set_style(style)\
                     .build()
         
+        if not tool:
+            mask = torch.from_numpy(np.array(Image.open("data/masks/test_2.png"))[:, :, :3]).to("cuda").unsqueeze(0).permute(0, 3, 1, 2).half() / 255.0
+        else:
+            mask = torch.from_numpy(np.array(Image.open(f"data/masks/test_3.png"))[:, :, :3]).to("cuda").unsqueeze(0).permute(0, 3, 1, 2).half() / 255.0
+
         # instantiate the generator
         generator = Generator().manual_seed(seed)
 
         # generate the image
-        image: Image = model(prompt=prompt, generator=generator).images[0]
+        image: Image = model(prompt=prompt, image=mask, strength=0.8, generator=generator, guidance_scale=0.0, num_inference_steps=8).images[0]
         
         # save the image in a buffer
         # img_byte_arr = io.BytesIO()
         # image.save(img_byte_arr, format='PNG')
         # img_byte = img_byte_arr.getvalue()
 
+
         data = {
             "image": json.dumps(np.array(image).tolist()),
-            "prompts": f"character: {character.name} hats: {hat.name} handoff: {tool.name} colors: {color.name} glasses: {eyes.name} style: {style.name}"
+            "prompts": f'''character: {character.name if character else ''} 
+                            hats: {hat.name if hat else ''} 
+                            handoff: {tool.name if tool else ""} 
+                            colors: {color.name if color else ""} 
+                            glasses: {eyes.name if eyes else ""} 
+                            style: {style.name if style else ""}'''
         }
 
         # push the image on IPFS

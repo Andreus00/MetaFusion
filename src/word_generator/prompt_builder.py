@@ -44,7 +44,7 @@ class Prompt:
         prompt = self.starter
         prompt += f" {self.character}"
         if self.hat:
-            prompt += f" with {self.hat}"
+            prompt += f" wearing a {self.hat} on the head"
         if self.color:
             prompt += f", {self.color}"
         if self.tool:
