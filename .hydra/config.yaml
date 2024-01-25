@@ -15,7 +15,9 @@ db:
   database: tracker.db
 model:
   from_pretrained:
-    _target_: diffusers.AutoPipelineForText2Image.from_pretrained
-    pretrained_model_or_path: stabilityai/sdxl-turbo
-    cache_dir: ./cache/models/
+    _target_: diffusers.AutoPipelineForImage2Image.from_pipe
+    pipeline:
+      _target_: diffusers.AutoPipelineForText2Image.from_pretrained
+      pretrained_model_or_path: stabilityai/sdxl-turbo
+      cache_dir: ./cache/models/
   device: cuda
