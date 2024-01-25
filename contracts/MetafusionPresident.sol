@@ -46,7 +46,7 @@ contract MetaFusionPresident {
     /**
      * @dev The cost of generating an image. This is the amount of ether that a user has to send to generate an image.
      */
-    uint256 constant GENERATION_FEES = 0.1 ether;  // Cost of generating an image
+    uint256 constant GENERATION_FEES = 0.01 ether;  // Cost of generating an image
     /**
      * @dev The cost of destroying an image. This is the amount of ether that a user has to send to destroy an image.
      */

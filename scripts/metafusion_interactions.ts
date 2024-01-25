@@ -6,7 +6,7 @@ import { Contract } from "ethers";
 
 var PACKET_COST = "0.1";
 var PACKET_OPENING_FEES = "0.01";
-var GENERATION_FEES = "0.1";  // The cost of generating an image
+var GENERATION_FEES = "0.01";  // The cost of generating an image
 var DESTRUCTION_FEES = "0.001";  // The fees for image destruction
 var TRANSACTION_FEES = "0.01";  // The fees for the transaction
 
