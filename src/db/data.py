@@ -250,7 +250,7 @@ class Data:
 		cur = self.get_cursor()
 		try:
 			result = []
-			cur.execute('SELECT id, isListed, price, collectionId FROM Images WHERE userHex=?', (userIdHex,))
+			cur.execute('SELECT id, isListed, price, collectionId, prompts FROM Images WHERE userHex=?', (userIdHex,))
 			query_result = cur.fetchall()
 			for row in query_result:
 				result.append({
@@ -258,6 +258,7 @@ class Data:
 					"isListed": row[1], 
 					"price": from_str_hex_to_int(row[2]), 
 					"collectionId": row[3],
+					"prompts": row[4],
 					"nft_type": 2})
 			return result
 		finally:

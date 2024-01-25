@@ -123,13 +123,13 @@ class CreateImage(Event):
         style = data.get_prompt(style_id)
 
         # generate the prompt
-        prompt = Prompt().set_character(character)\
+        prompt_obj = Prompt().set_character(character)\
                     .set_hat(hat)\
                     .set_tool(tool)\
                     .set_color(color)\
                     .set_eyes(eyes)\
-                    .set_style(style)\
-                    .build()
+                    .set_style(style)
+        prompt = prompt_obj.build()
         
         if not tool:
             mask = torch.from_numpy(np.array(Image.open("data/masks/test_2.png"))[:, :, :3]).to("cuda").unsqueeze(0).permute(0, 3, 1, 2).half() / 255.0
