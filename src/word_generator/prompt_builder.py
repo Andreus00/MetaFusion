@@ -5,7 +5,7 @@ class Prompt:
     Utility class used to assemble a prompt.
     '''
 
-    def __init__(self, starter="a 3D", trailer="upper bust, ultra realistic, 4k, frontal view"):
+    def __init__(self, starter="a 3D", trailer="with clothes, dressed, upper bust, ultra realistic, 4k, frontal view"):
         self.starter =  starter
         self.character = self.hat = self.tool = self.color = self.eyes = self.style = ""
         self.trailer = trailer
