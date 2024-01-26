@@ -608,22 +608,32 @@ class Data:
 		finally:
 			cur.close()
 
-	def transfer_prompt(self, prompt_id: int, from_user_id: str, to_user_id: str, price: int):
-		cur = self.get_cursor()
+	def transfer_prompt(self, prompt_id: int, from_user_id: str, to_user_id: str, price: int, cur = None):
+		has_passed_cursor = True
+		if cur is None:
+			has_passed_cursor = False
+			cur = self.get_cursor()
 		try:
 			cur.execute('UPDATE Prompts SET userHex = ?, isListed = 0 WHERE id = ?', (to_user_id.lower(), from_int_to_hex_str(prompt_id)))
 			self.con.commit()
 			self.addTransferEvent(prompt_id, from_user_id.lower(), to_user_id.lower(), 1, price)
 			return True
 		finally:
-			cur.close()
+			if not has_passed_cursor:
+				cur.close()
 
 	def transfer_image(self, image_id: int, from_user_id: str, to_user_id: str, price: int):
+		# TODO transfer prompts
 		cur = self.get_cursor()
 		try:
 			cur.execute('UPDATE Images SET userHex = ?, isListed = 0 WHERE id = ?', (to_user_id.lower(), from_int_to_hex_str(image_id)))
 			self.con.commit()
 			self.addTransferEvent(image_id, from_user_id.lower(), to_user_id.lower(), 2, price)
+			prompts_int = getInfoFromImageId(image_id)[1]
+			for prompt in prompts_int:
+				if prompt != 0:
+					print("TRANSFER PROMPT WITH CARD: ", prompt)
+					self.transfer_prompt(prompt, from_user_id, to_user_id, 0, cur=cur)
 			return True
 		finally:
 			cur.close()
