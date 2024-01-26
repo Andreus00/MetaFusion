@@ -20,7 +20,4 @@ model:
       _target_: diffusers.AutoPipelineForText2Image.from_pretrained
       pretrained_model_or_path: stabilityai/sdxl-turbo
       cache_dir: ./cache/models/
-      safety_checker:
-        _target_: diffusers.pipelines.stable_diffusion.StableDiffusionSafetyChecker.from_pretrained
-        pretrained_model_name_or_path: CompVis/stable-diffusion-safety-checker
   device: cuda
