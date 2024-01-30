@@ -1,1 +1,1 @@
-docker run --gpus all -it --rm --name metafusion_test -p 3000:3000 -p 8545:8545 metafusion:latest
+docker run --gpus all -it --name metafusion_test -p 3000:3000 -p 8545:8545 metafusion:latest

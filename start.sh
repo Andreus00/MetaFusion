@@ -12,7 +12,7 @@ sleep 3
 
 python3 -m src.oracle.oracle &
 
-sleep 20
+sleep 3
 
 collection=1 npx hardhat run scripts/create_collection.ts --network localhost
 

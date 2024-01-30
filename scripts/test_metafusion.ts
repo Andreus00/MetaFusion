@@ -113,8 +113,8 @@ async function connect(contractName: string) {
 
         for (let i = 0; i < collections.length; i++) {
             let collection = collections[i]
-            let tx = await contract_owner.forgeCollection(collection)
-            await tx.wait();
+            // let tx = await contract_owner.forgeCollection(collection)
+            // await tx.wait();
 
             for (let x = 0; x < contracts.length; x++) {
                 let cur_contract = contracts[x];
