@@ -2,6 +2,8 @@
 
 MetaFusion is an innovative decentralized application (DApp) tailored for the creation and exchange of unique digital assets in the form of Non-Fungible Tokens (NFTs). Powered by the Ethereum blockchain and ERC721 protocol, MetaFusion empowers users to unleash their creativity by combining prompts to generate exclusive NFTs.
 
+Check out [technical report](https://github.com/Andreus00/MetaFusion/blob/main/MetaFusion.pdf) for a 360° view of the project.
+
 ## Key Features:
 
 - Creative Exploration: Engage in an interactive environment, crafting personalized digital artworks through the combination of prompts.
