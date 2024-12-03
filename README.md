@@ -4,6 +4,8 @@ MetaFusion is an innovative decentralized application (DApp) tailored for the cr
 
 Check our [technical report](https://github.com/Andreus00/MetaFusion/blob/main/MetaFusion.pdf) for a 360° view of the project.
 
+Here you can also find the [frontend repository](https://github.com/Frklin/metafusionapp) of Metafusion 
+
 ## Key Features:
 
 - Creative Exploration: Engage in an interactive environment, crafting personalized digital artworks through the combination of prompts.
